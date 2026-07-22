@@ -1,0 +1,17 @@
+# /etc/systemd/system/duelel.service
+# sudo systemctl daemon-reload && sudo systemctl enable --now duelel
+[Unit]
+Description=Duelel (corrida de digitação)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/duelel
+ExecStart=/usr/bin/node server.js
+Environment=PORT=8080
+Restart=always
+RestartSec=2
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

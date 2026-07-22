@@ -1,0 +1,17 @@
+{
+  "name": "duelel",
+  "version": "1.0.0",
+  "description": "Corrida de digitação em tempo real (WebSocket + SQLite)",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "better-sqlite3": "^11.3.0"
+  }
+}

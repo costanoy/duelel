@@ -1,0 +1,6 @@
+# Caddy cuida do HTTPS automaticamente (Let's Encrypt) e faz o proxy,
+# inclusive do upgrade para WebSocket, sem configuração extra.
+# Troque o domínio abaixo e rode:  caddy run
+duelel.cyberhat.com.br {
+    reverse_proxy localhost:8080
+}
