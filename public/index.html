@@ -528,40 +528,56 @@ let myName = lsGet('duelel_name') || '';
 
 /* ---------- WebSocket ---------- */
 const WS_URL = (location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws';
-let ws=null, wsOpen=false, outbox=[];
+let ws=null, wsOpen=false, outbox=[], everConnected=false, serverDown=false, connGuard=null;
+const OFFLINE_MSG='Modo online indisponível: o servidor está fora do ar. Você pode jogar Sozinho e 30 segundos normalmente!';
 
 function wsConnect(){
   if(ws && (ws.readyState===0 || ws.readyState===1)) return;
   try{ ws=new WebSocket(WS_URL); }catch(e){ return; }
   ws.onopen=()=>{
-    wsOpen=true;
+    wsOpen=true; everConnected=true; serverDown=false; clearTimeout(connGuard);
     send('hello', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID});
     const q=outbox; outbox=[]; q.forEach(m=>{ try{ws.send(m);}catch(e){} });
   };
   ws.onmessage=(e)=>{ let m; try{ m=JSON.parse(e.data); }catch(_){ return; } onServer(m); };
-  ws.onclose=()=>{ wsOpen=false; onDisconnect(); };
-  ws.onerror=()=>{};
+  ws.onclose=()=>{ wsOpen=false; if(!everConnected) serverDown=true; onDisconnect(); };
+  ws.onerror=()=>{ if(!everConnected) serverDown=true; };
 }
 function send(type, payload){
   const m=JSON.stringify(Object.assign({type}, payload||{}));
   if(wsOpen && ws && ws.readyState===1){ ws.send(m); }
   else { outbox.push(m); wsConnect(); }
 }
+// checa se dá pra usar o online; se o servidor não responder em 6s, avisa e volta
+function onlineGuard(){
+  if(serverDown){ flashError(OFFLINE_MSG); return false; }
+  wsConnect();
+  clearTimeout(connGuard);
+  connGuard=setTimeout(()=>{
+    if(!wsOpen){
+      serverDown=true;
+      if(!document.getElementById('screen-wait').classList.contains('hidden')){ show('home'); flashError(OFFLINE_MSG); }
+    }
+  }, 6000);
+  return true;
+}
 function onDisconnect(){
   // se a conexão cair durante espera ou duelo, volta pro início com aviso
   const waiting = !document.getElementById('screen-wait').classList.contains('hidden');
   const racing  = !document.getElementById('screen-race').classList.contains('hidden') && ctx && ctx.mp && !ctx.ended;
   if(waiting || racing){
+    clearTimeout(connGuard);
     goHome();
-    flashError('Conexão perdida. Tente novamente.');
+    flashError(serverDown ? OFFLINE_MSG : 'Conexão perdida. Tente novamente.');
   }
 }
 function flashError(msg){
   const h=document.getElementById('mpHint');
-  if(h){ h.style.display='block'; h.textContent=msg; setTimeout(()=>{ h.style.display='none'; }, 4000); }
+  if(h){ h.style.display='block'; h.textContent=msg; setTimeout(()=>{ h.style.display='none'; }, 6000); }
 }
 
 function onServer(m){
+  clearTimeout(connGuard);   // qualquer mensagem do servidor prova que ele está no ar
   switch(m.type){
     case 'welcome':      break;
     case 'waiting':      break;                       // já mostramos a tela de espera
@@ -614,7 +630,7 @@ function goHome(){
    ========================================================================= */
 function startQuick(){
   if(!ensureName()) return;
-  wsConnect();
+  if(!onlineGuard()) return;
   show('wait');
   document.getElementById('waitSpinner').style.display='';
   document.getElementById('waitTitle').textContent='Procurando oponente…';
@@ -631,7 +647,7 @@ function cancelWait(){ send('leave',{}); show('home'); }
 function roomLinkFor(code){ return location.origin + location.pathname + '#sala=' + code; }
 function createRoom(){
   if(!ensureName()) return;
-  wsConnect();
+  if(!onlineGuard()) return;
   show('wait');
   document.getElementById('waitSpinner').style.display='';
   document.getElementById('waitTitle').textContent='Criando sala…';
@@ -651,9 +667,9 @@ function showRoomLink(code){
 }
 function joinPending(){
   if(!ensureName()) return;
+  if(!onlineGuard()) return;
   const c=pendingRoom; pendingRoom=null;
   document.getElementById('inviteBanner').classList.add('hidden');
-  wsConnect();
   show('wait');
   document.getElementById('waitSpinner').style.display='';
   document.getElementById('waitTitle').textContent='Entrando na sala…';
@@ -802,6 +818,8 @@ function buildRace(){
   const scr=document.getElementById('scroller');
   scr.style.transform='translateY(0)';
   ctx.lineH = parseFloat(getComputedStyle(passage).lineHeight) || 40;
+  const _chH = document.getElementById('caretYou').offsetHeight || 24;
+  ctx.caretDy = Math.max(0, (ctx.lineH - _chH) / 2);   // centraliza a barrinha na linha
   if(ctx.timed){ ta.classList.add('timed'); ta.style.height=(3*ctx.lineH)+'px'; }
   else { ta.classList.remove('timed'); ta.style.height=''; }
 
@@ -894,8 +912,9 @@ function paint(){
 }
 function positionCaret(caret, idx){
   const sp=ctx.spans; if(!sp.length) return;
-  if(idx>=sp.length){ const last=sp[sp.length-1]; caret.style.left=(last.offsetLeft+last.offsetWidth)+'px'; caret.style.top=last.offsetTop+'px'; }
-  else { const s=sp[idx]; caret.style.left=s.offsetLeft+'px'; caret.style.top=s.offsetTop+'px'; }
+  const dy = ctx.caretDy || 0;
+  if(idx>=sp.length){ const last=sp[sp.length-1]; caret.style.left=(last.offsetLeft+last.offsetWidth)+'px'; caret.style.top=(last.offsetTop+dy)+'px'; }
+  else { const s=sp[idx]; caret.style.left=s.offsetLeft+'px'; caret.style.top=(s.offsetTop+dy)+'px'; }
 }
 function currentWpm(ms, correct){ const min=ms/60000; return min<=0?0:Math.max(0,Math.round((correct/5)/min)); }
 
@@ -963,10 +982,16 @@ function submitScore(wpm, mode){
 }
 function openLeaderboard(){
   stopAll();
-  wsConnect();
   show('lb');
-  document.getElementById('lbList').innerHTML='<div class="lb-empty">carregando…</div>';
+  const list=document.getElementById('lbList');
+  if(serverDown){ list.innerHTML='<div class="lb-empty">Ranking indisponível: o servidor está fora do ar.</div>'; return; }
+  list.innerHTML='<div class="lb-empty">carregando…</div>';
+  wsConnect();
   send('leaderboard_get',{});
+  setTimeout(()=>{
+    if(list.querySelector('.lb-empty') && list.textContent.indexOf('carregando')>=0)
+      list.innerHTML='<div class="lb-empty">Ranking indisponível: o servidor está fora do ar.</div>';
+  }, 6000);
 }
 function renderLb(rows){
   const list=document.getElementById('lbList');
