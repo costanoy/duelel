@@ -14,7 +14,21 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 8080;
-const PUBLIC_DIR = path.join(__dirname, 'public');
+
+function findPublicDir() {
+  const candidates = [
+    path.join(__dirname, 'public'),
+    path.join(process.cwd(), 'public'),
+    path.join(__dirname, 'public', 'public'),
+    __dirname,
+    process.cwd()
+  ];
+  for (const d of candidates) {
+    try { if (fs.existsSync(path.join(d, 'index.html'))) return d; } catch (e) {}
+  }
+  return path.join(__dirname, 'public');
+}
+const PUBLIC_DIR = findPublicDir();
 
 /* ---------------------------------------------------------------- SQLite */
 let db = null;
@@ -87,7 +101,10 @@ const server = http.createServer((req, res) => {
   const filePath = path.join(PUBLIC_DIR, path.normalize(url).replace(/^(\.\.[\/\\])+/, ''));
   if (!filePath.startsWith(PUBLIC_DIR)) { res.writeHead(403); return res.end('forbidden'); }
   fs.readFile(filePath, (err, data) => {
-    if (err) { res.writeHead(404); return res.end('não encontrado'); }
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end('<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;padding:2rem"><h1>404</h1><p>Arquivo não encontrado no servidor.</p></body>');
+    }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
     res.end(data);
   });
@@ -313,4 +330,20 @@ const ping = setInterval(() => {
 }, 30000);
 wss.on('close', () => clearInterval(ping));
 
-server.listen(PORT, () => console.log(`[duelel] ouvindo na porta ${PORT}`));
+function listDir(d) {
+  try { return fs.readdirSync(d).join(', ') || '(vazia)'; }
+  catch (e) { return '(não existe: ' + e.code + ')'; }
+}
+server.listen(PORT, () => {
+  console.log(`[duelel] ouvindo na porta ${PORT}`);
+  console.log('[diag] __dirname   =', __dirname);
+  console.log('[diag] cwd         =', process.cwd());
+  console.log('[diag] PUBLIC_DIR  =', PUBLIC_DIR);
+  console.log('[diag] conteúdo de __dirname:', listDir(__dirname));
+  console.log('[diag] conteúdo de PUBLIC_DIR:', listDir(PUBLIC_DIR));
+  if (fs.existsSync(path.join(PUBLIC_DIR, 'index.html'))) {
+    console.log('[duelel] index.html encontrado — OK');
+  } else {
+    console.warn('[AVISO] index.html NÃO encontrado. Veja a lista acima: o arquivo pode estar noutra pasta ou com outro nome (atenção a maiúsculas — o Linux diferencia Index.html de index.html).');
+  }
+});
