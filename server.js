@@ -43,37 +43,49 @@ try {
     mode      TEXT,
     ts        INTEGER
   );`);
+  // migração: adiciona a coluna platform se o banco veio de uma versão anterior
+  const cols = db.prepare("PRAGMA table_info(scores)").all().map((c) => c.name);
+  if (!cols.includes('platform')) {
+    db.exec("ALTER TABLE scores ADD COLUMN platform TEXT DEFAULT 'desktop'");
+  }
   console.log('[db] SQLite pronto');
 } catch (e) {
   console.warn('[db] better-sqlite3 indisponível — ranking desativado:', e.message);
 }
 
 const upsertScore = db && db.prepare(`
-  INSERT INTO scores(player_id, name, wpm, mode, ts)
-  VALUES(@player_id, @name, @wpm, @mode, @ts)
+  INSERT INTO scores(player_id, name, wpm, mode, ts, platform)
+  VALUES(@player_id, @name, @wpm, @mode, @ts, @platform)
   ON CONFLICT(player_id) DO UPDATE SET
-    name = excluded.name, wpm = excluded.wpm, mode = excluded.mode, ts = excluded.ts
+    name = excluded.name, wpm = excluded.wpm, mode = excluded.mode,
+    ts = excluded.ts, platform = excluded.platform
   WHERE excluded.wpm > scores.wpm
 `);
-const selectTop = db && db.prepare(
-  `SELECT name, wpm, mode FROM scores ORDER BY wpm DESC LIMIT ?`
+const selectTopPlat = db && db.prepare(
+  `SELECT name, wpm, mode FROM scores WHERE platform = ? ORDER BY wpm DESC LIMIT ?`
 );
 
-function submitScore(playerId, name, wpm, mode) {
+function submitScore(playerId, name, wpm, mode, platform) {
   if (!db || !playerId) return;
   wpm = Math.round(Number(wpm) || 0);
   if (wpm <= 0 || wpm > 400) return; // guarda simples contra valores absurdos
+  const plat = (platform === 'mobile') ? 'mobile' : 'desktop';
   try {
     upsertScore.run({
       player_id: String(playerId).slice(0, 64),
       name: String(name || '—').slice(0, 14),
-      wpm, mode: String(mode || 'duelo').slice(0, 12), ts: Date.now()
+      wpm, mode: String(mode || 'duelo').slice(0, 12), ts: Date.now(), platform: plat
     });
   } catch (e) { /* ignora */ }
 }
 function topScores(n = 15) {
-  if (!db) return [];
-  try { return selectTop.all(n); } catch (e) { return []; }
+  if (!db) return { desktop: [], mobile: [] };
+  try {
+    return {
+      desktop: selectTopPlat.all('desktop', n),
+      mobile: selectTopPlat.all('mobile', n)
+    };
+  } catch (e) { return { desktop: [], mobile: [] }; }
 }
 
 /* ---------------------------------------------------------------- palavras */
@@ -231,11 +243,11 @@ function handle(ws, m) {
 
     case 'score_submit':
       applyProfile(c, m);
-      submitScore(c.playerId, c.name, m.wpm, m.mode || 'treino');
+      submitScore(c.playerId, c.name, m.wpm, m.mode || 'treino', c.platform);
       break;
 
     case 'leaderboard_get':
-      send(ws, 'leaderboard', { rows: topScores(15) });
+      send(ws, 'leaderboard', topScores(15));
       break;
 
     case 'rematch': {
@@ -333,8 +345,8 @@ function statOf(race, ws) {
 function report(race, winner) {
   const { a, b } = race;
   const sa = statOf(race, a), sb = statOf(race, b);
-  submitScore(a.c.playerId, a.c.name, sa.wpm, 'duelo');
-  submitScore(b.c.playerId, b.c.name, sb.wpm, 'duelo');
+  submitScore(a.c.playerId, a.c.name, sa.wpm, 'duelo', a.c.platform);
+  submitScore(b.c.playerId, b.c.name, sb.wpm, 'duelo', b.c.platform);
   send(a, 'race_over', { youWon: winner === a, you: sa, opp: sb });
   send(b, 'race_over', { youWon: winner === b, you: sb, opp: sa });
   for (const x of [a, b]) { x.c.state = 'idle'; x.c.race = null; x.c.opp = null; }
@@ -359,7 +371,7 @@ function abandon(ws) {
   const opp = ws.c.opp;
   if (opp && opp.readyState === 1) {
     const oppWpm = wpmCalc(opp.c.lastIdx || 0, Math.max(1, race.endAt - race.startAt));
-    submitScore(opp.c.playerId, opp.c.name, oppWpm, 'duelo');
+    submitScore(opp.c.playerId, opp.c.name, oppWpm, 'duelo', opp.c.platform);
     send(opp, 'opp_left', {});
     opp.c.state = 'idle'; opp.c.race = null; opp.c.opp = null;
     opp.c.rematchWith = null; opp.c.rematchWant = false;

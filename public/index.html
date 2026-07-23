@@ -257,6 +257,9 @@
 
   /* leaderboard */
   .lb-list{display:flex; flex-direction:column; gap:6px; width:100%; max-width:460px}
+  .lb-group{display:flex; flex-direction:column; gap:6px; width:100%}
+  .lb-group + .lb-group{margin-top:20px}
+  .lb-head{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text); text-align:left; padding:0 2px 4px; border-bottom:1px solid var(--line); margin-bottom:2px}
   .lb-row{
     display:flex; align-items:center; gap:12px; padding:11px 14px;
     background:var(--surface); border:1px solid var(--line); border-radius:10px;
@@ -610,7 +613,7 @@ function onServer(m){
     case 'race_over':    endMpRace(m); break;
     case 'opp_left':     endMpLeft(); break;
     case 'rematch_offer':onRematchOffer(); break;
-    case 'leaderboard':  renderLb(m.rows||[]); break;
+    case 'leaderboard':  renderLb(m); break;
     case 'error':        goHome(); flashError(m.msg||'Algo deu errado.'); break;
   }
 }
@@ -1067,7 +1070,7 @@ function finalizeSolo(elapsedMs){
 const MODE_LABEL = {duelo:'duelo', tempo:'30s', treino:'treino'};
 function submitScore(wpm, mode){
   if(!wpm || wpm<=0) return;
-  send('score_submit', {wpm, mode, name:myName, playerId:PLAYER_ID});
+  send('score_submit', {wpm, mode, name:myName, playerId:PLAYER_ID, platform:PLATFORM});
 }
 function openLeaderboard(){
   stopAll();
@@ -1082,10 +1085,24 @@ function openLeaderboard(){
       list.innerHTML='<div class="lb-empty">Ranking indisponível: o servidor está fora do ar.</div>';
   }, 6000);
 }
-function renderLb(rows){
+function renderLb(data){
   const list=document.getElementById('lbList');
-  if(!rows.length){ list.innerHTML='<div class="lb-empty">Ninguém no ranking ainda. Jogue uma partida pra estrear! 🏁</div>'; return; }
   list.innerHTML='';
+  list.appendChild(lbTable('⌨ Teclado', (data && data.desktop) || []));
+  list.appendChild(lbTable('📱 Celular', (data && data.mobile) || []));
+}
+function lbTable(title, rows){
+  const wrap=document.createElement('div');
+  wrap.className='lb-group';
+  const h=document.createElement('div');
+  h.className='lb-head'; h.textContent=title;
+  wrap.appendChild(h);
+  if(!rows.length){
+    const e=document.createElement('div');
+    e.className='lb-empty'; e.textContent='Ninguém aqui ainda. Seja o primeiro! 🏁';
+    wrap.appendChild(e);
+    return wrap;
+  }
   rows.forEach((r,i)=>{
     const row=document.createElement('div');
     row.className='lb-row'+(r.name===myName?' me':'');
@@ -1094,8 +1111,9 @@ function renderLb(rows){
                   `<span class="lb-name">${escapeHtml(r.name||'—')}</span>`+
                   `<span class="lb-mode">${MODE_LABEL[r.mode]||r.mode||''}</span>`+
                   `<span class="lb-ppm">${r.wpm} ppm</span>`;
-    list.appendChild(row);
+    wrap.appendChild(row);
   });
+  return wrap;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
