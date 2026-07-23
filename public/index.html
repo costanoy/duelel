@@ -319,7 +319,7 @@
   .invite p{color:var(--text); font-size:14px; font-family:var(--mono)}
 
   /* modo tempo: janela de poucas linhas que rola */
-  .text-area.timed{overflow:hidden}
+  .text-area.windowed{overflow:hidden}
   #scroller{position:relative; transition:transform .15s ease}
 
   .hidden{display:none !important}
@@ -874,8 +874,10 @@ function buildRace(){
   ctx.caretDy = Math.round((ctx.lineH - _caretH)/2 - _fs*RISE);
   document.getElementById('caretYou').style.height = _caretH + 'px';
   document.getElementById('caretOpp').style.height = _caretH + 'px';
-  if(ctx.timed){ ta.classList.add('timed'); ta.style.height=(3*ctx.lineH)+'px'; }
-  else { ta.classList.remove('timed'); ta.style.height=''; }
+  // janela rolante: no modo tempo (sempre) e no celular (todos os modos, pro teclado não cobrir)
+  ctx.windowed = ctx.timed || IS_MOBILE;
+  if(ctx.windowed){ ta.classList.add('windowed'); ta.style.height=(3*ctx.lineH)+'px'; }
+  else { ta.classList.remove('windowed'); ta.style.height=''; }
 
   positionCaret(document.getElementById('caretYou'),0);
   if(!ctx.solo) positionCaret(caretOpp,0);
@@ -891,7 +893,7 @@ function buildRace(){
 }
 
 function doScroll(){
-  if(!ctx.timed) return;
+  if(!ctx.windowed) return;
   const caret=document.getElementById('caretYou');
   const top=parseFloat(caret.style.top)||0;
   const ty=Math.max(0, top - ctx.lineH);
