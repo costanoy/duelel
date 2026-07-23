@@ -92,7 +92,8 @@ function genWords(n, accents) {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon'
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json'
 };
 const server = http.createServer((req, res) => {
   if (req.url === '/health') { res.writeHead(200); return res.end('ok'); }
@@ -230,8 +231,36 @@ function handle(ws, m) {
       send(ws, 'leaderboard', { rows: topScores(15) });
       break;
 
+    case 'rematch': {
+      const other = c.rematchWith;
+      if (!other || other.readyState !== 1 || other.c.rematchWith !== ws) {
+        // oponente saiu — não dá pra revanche
+        c.rematchWith = null; c.rematchWant = false;
+        send(ws, 'opp_left', {});
+        break;
+      }
+      c.rematchWant = true;
+      if (other.c.rematchWant) {
+        // os dois toparam → nova corrida no mesmo par
+        const code = c.rematchCode || other.c.rematchCode || null;
+        c.rematchWith = null; other.c.rematchWith = null;
+        c.rematchWant = false; other.c.rematchWant = false;
+        startRace(other, ws, c.accents, code);
+      } else {
+        send(ws, 'waiting', { mode: 'rematch' });
+        send(other, 'rematch_offer', {});
+      }
+      break;
+    }
+
     case 'leave':
       abandon(ws); leaveQueue(ws);
+      // desfaz revanche pendente, avisando o par
+      if (c.rematchWith && c.rematchWith.readyState === 1 && c.rematchWith.c.rematchWith === ws) {
+        const p = c.rematchWith;
+        p.c.rematchWith = null; if (p.c.rematchWant) send(p, 'opp_left', {});
+      }
+      c.rematchWith = null; c.rematchWant = false;
       if (c.roomCode) closeRoom(c.roomCode, ws);
       c.state = 'idle';
       break;
@@ -292,11 +321,16 @@ function report(race, winner) {
   submitScore(b.c.playerId, b.c.name, sb.wpm, 'duelo');
   send(a, 'race_over', { youWon: winner === a, you: sa, opp: sb });
   send(b, 'race_over', { youWon: winner === b, you: sb, opp: sa });
-  resetRacers(a, b, race.code);
-}
-function resetRacers(a, b, code) {
-  for (const x of [a, b]) if (x) { x.c.state = 'idle'; x.c.race = null; x.c.opp = null; }
-  if (code) rooms.delete(code);
+  for (const x of [a, b]) { x.c.state = 'idle'; x.c.race = null; x.c.opp = null; }
+  if (race.code) {
+    // guarda o par para permitir revanche sem novo link
+    a.c.rematchWith = b; b.c.rematchWith = a;
+    a.c.rematchWant = false; b.c.rematchWant = false;
+    a.c.rematchCode = race.code; b.c.rematchCode = race.code;
+    rooms.delete(race.code); // o link antigo já não serve; a revanche usa a conexão direta
+  } else {
+    a.c.rematchWith = null; b.c.rematchWith = null;
+  }
 }
 
 /* saída no meio da corrida: o oponente ganha por W.O. */
@@ -310,6 +344,7 @@ function abandon(ws) {
     submitScore(opp.c.playerId, opp.c.name, opp.c.lastWpm || 0, 'duelo');
     send(opp, 'opp_left', {});
     opp.c.state = 'idle'; opp.c.race = null; opp.c.opp = null;
+    opp.c.rematchWith = null; opp.c.rematchWant = false;
   }
   if (race.code) rooms.delete(race.code);
 }
@@ -318,6 +353,13 @@ function cleanup(ws) {
   abandon(ws);
   leaveQueue(ws);
   if (ws.c.roomCode) closeRoom(ws.c.roomCode, ws);
+  // se havia um par aguardando revanche, avisa e desfaz
+  const peer = ws.c.rematchWith;
+  if (peer && peer.readyState === 1 && peer.c.rematchWith === ws) {
+    const wasWaiting = peer.c.rematchWant;
+    peer.c.rematchWith = null; peer.c.rematchWant = false;
+    if (wasWaiting) send(peer, 'opp_left', {});
+  }
 }
 
 /* heartbeat: derruba conexões mortas */

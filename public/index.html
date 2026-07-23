@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Duelel — corrida de digitação</title>
+<meta name="description" content="Corrida de digitação em tempo real. Você contra o tempo ou contra outro jogador.">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#15161a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duelel">
+<link rel="icon" href="/icons/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -306,6 +315,10 @@
   #scroller{position:relative; transition:transform .15s ease}
 
   .hidden{display:none !important}
+
+  /* botão pulsando quando o oponente pede revanche */
+  @keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 var(--you-soft)}50%{box-shadow:0 0 0 6px var(--you-soft)}}
+  button.btn.pulse{animation:pulseBtn 1.1s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -586,6 +599,7 @@ function onServer(m){
     case 'opp_progress': updateOpp(m); break;
     case 'race_over':    endMpRace(m); break;
     case 'opp_left':     endMpLeft(); break;
+    case 'rematch_offer':onRematchOffer(); break;
     case 'leaderboard':  renderLb(m.rows||[]); break;
     case 'error':        goHome(); flashError(m.msg||'Algo deu errado.'); break;
   }
@@ -714,14 +728,22 @@ function endMpRace(m){
   fillResult(m.you, m.opp);
 }
 function endMpLeft(){
-  if(!ctx) return;
-  ctx.ended=true; stopAll();
-  const {correct,acc}=stats();
-  const el = ctx.finished?ctx.finishTime:(Date.now()-ctx.startTime);
-  const you={ name:myName, wpm:currentWpm(el,correct), acc, finishTime:(ctx.finished?ctx.finishTime:null) };
-  const verdict=document.getElementById('verdict');
-  verdict.textContent='Você venceu — oponente saiu'; verdict.className='verdict win';
-  fillResult(you, { name:ctx.oppName, wpm:0, acc:null, finishTime:null });
+  const inRace = !document.getElementById('screen-race').classList.contains('hidden')
+                 && ctx && ctx.started && !ctx.ended;
+  if(inRace){
+    // oponente saiu no meio da corrida → vitória
+    ctx.ended=true; stopAll();
+    const {correct,acc}=stats();
+    const el = ctx.finished?ctx.finishTime:(Date.now()-ctx.startTime);
+    const you={ name:myName, wpm:currentWpm(el,correct), acc, finishTime:(ctx.finished?ctx.finishTime:null) };
+    const verdict=document.getElementById('verdict');
+    verdict.textContent='Você venceu — oponente saiu'; verdict.className='verdict win';
+    fillResult(you, { name:(ctx&&ctx.oppName)||'Oponente', wpm:0, acc:null, finishTime:null });
+  }else{
+    // saiu fora da corrida (ex.: enquanto esperava revanche) → não dá pra continuar
+    goHome();
+    flashError('O oponente saiu da sala.');
+  }
 }
 function fillResult(you, opp){
   document.getElementById('resYouName').textContent=you.name||myName;
@@ -732,14 +754,31 @@ function fillResult(you, opp){
   document.getElementById('resOppWpm').textContent=opp.wpm||0;
   document.getElementById('resOppAcc').textContent=
     (opp.acc!=null?opp.acc+'%':'—')+(opp.finishTime?` · ${(opp.finishTime/1000).toFixed(1)}s`:'');
-  // botão principal: nova sala (se veio de sala) ou nova fila
+  // botão principal: revanche com o mesmo amigo (sala) ou nova fila (partida rápida)
   const rb=document.getElementById('rematchBtn');
-  rb.textContent = ctx.fromRoom ? 'Nova sala' : 'Jogar de novo';
+  rb.textContent = ctx.fromRoom ? 'Revanche' : 'Jogar de novo';
+  rb.classList.remove('pulse');
   show('result');
 }
 function rematch(){
-  if(ctx && ctx.fromRoom) createRoom();
-  else startQuick();
+  if(ctx && ctx.fromRoom){
+    if(!onlineGuard()) return;
+    show('wait');
+    document.getElementById('waitSpinner').style.display='';
+    document.getElementById('waitTitle').textContent='Revanche';
+    document.getElementById('waitSub').textContent='Aguardando o oponente aceitar…';
+    document.getElementById('linkWrap').classList.add('hidden');
+    send('rematch',{});
+  }else{
+    startQuick();
+  }
+}
+// o oponente pediu revanche: destaca o botão pra você aceitar na hora
+function onRematchOffer(){
+  if(document.getElementById('screen-result').classList.contains('hidden')) return;
+  const rb=document.getElementById('rematchBtn');
+  rb.textContent='Aceitar revanche 🔥';
+  rb.classList.add('pulse');
 }
 
 /* =========================================================================
@@ -818,8 +857,11 @@ function buildRace(){
   const scr=document.getElementById('scroller');
   scr.style.transform='translateY(0)';
   ctx.lineH = parseFloat(getComputedStyle(passage).lineHeight) || 40;
-  const _chH = document.getElementById('caretYou').offsetHeight || 24;
-  ctx.caretDy = Math.max(0, (ctx.lineH - _chH) / 2);   // centraliza a barrinha na linha
+  const _fs = parseFloat(getComputedStyle(passage).fontSize) || 24;
+  const _caretH = Math.round(_fs * 0.72);                       // altura ~ das maiúsculas
+  ctx.caretDy = Math.round((ctx.lineH - _fs)/2 + _fs*0.80 - _caretH - 1); // base logo acima da linha de base
+  document.getElementById('caretYou').style.height = _caretH + 'px';
+  document.getElementById('caretOpp').style.height = _caretH + 'px';
   if(ctx.timed){ ta.classList.add('timed'); ta.style.height=(3*ctx.lineH)+'px'; }
   else { ta.classList.remove('timed'); ta.style.height=''; }
 
@@ -881,25 +923,44 @@ function onType(e){
     ctx.waitingFirstKey=false; ctx.startTime=Date.now(); ctx.deadline=ctx.startTime+ctx.duration;
     clockTimer=setInterval(updateClock, 100);
   }
+  const prev = ctx.value;
   let v=e.target.value;
-  if(v.length>ctx.text.length) v=v.slice(0,ctx.text.length);
+
+  // prefixo correto (quantos caracteres batem desde o início)
+  let cp=0;
+  while(cp<v.length && cp<ctx.text.length && v[cp]===ctx.text[cp]) cp++;
+  // regra anti-mash: não dá pra ir mais de 1 caractere além do erro — tem que corrigir pra seguir
+  const maxLen = Math.min(ctx.text.length, cp+1);
+  if(v.length>maxLen){ v=v.slice(0,maxLen); e.target.value=v; }
+
+  // acurácia real: conta cada caractere adicionado (mesmo os que serão corrigidos)
+  if(v.length>prev.length){
+    for(let i=prev.length;i<v.length;i++){
+      ctx.keys=(ctx.keys||0)+1;
+      if(v[i]!==ctx.text[i]) ctx.errs=(ctx.errs||0)+1;
+    }
+  }
+
   ctx.value=v; paint();
   positionCaret(document.getElementById('caretYou'), v.length);
   document.getElementById('caretYou').classList.toggle('blink', v.length===0);
   doScroll();
-  const {correct}=stats();
-  document.getElementById('youFill').style.width = (v.length/ctx.text.length*100)+'%';
+
+  // progresso é medido pelos caracteres CORRETOS, não pelo tanto que foi digitado
+  document.getElementById('youFill').style.width = (cp/ctx.text.length*100)+'%';
   if(ctx.mp){
     const now=Date.now();
-    if(now-ctx.lastSent>110){ ctx.lastSent=now; send('progress',{idx:v.length, wpm:currentWpm(now-ctx.startTime,correct)}); }
+    if(now-ctx.lastSent>110){ ctx.lastSent=now; send('progress',{idx:cp, wpm:currentWpm(now-ctx.startTime,cp)}); }
   }
-  if(v.length>=ctx.text.length){ finishMine(); }
+  // só termina quando o texto inteiro está correto
+  if(cp>=ctx.text.length){ finishMine(); }
 }
 
 function stats(){
   let correct=0; const v=ctx.value, t=ctx.text;
   for(let i=0;i<v.length;i++) if(v[i]===t[i]) correct++;
-  const acc = v.length? Math.round(correct/v.length*100):100;
+  const acc = ctx.keys ? Math.max(0, Math.round((ctx.keys-ctx.errs)/ctx.keys*100))
+                       : (v.length? Math.round(correct/v.length*100):100);
   return {correct, acc, typed:v.length};
 }
 function paint(){
@@ -1054,6 +1115,12 @@ document.getElementById('nick').addEventListener('keydown',(e)=>{
   }
 })();
 
+/* registra o service worker (PWA / offline) */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
