@@ -206,6 +206,8 @@ function handle(ws, m) {
       const opp = c.opp;
       if (opp) send(opp, 'opp_progress', { idx: m.idx | 0, wpm: m.wpm | 0 });
       c.lastWpm = m.wpm | 0;
+      c.lastIdx = m.idx | 0;
+      if (m.acc != null) c.lastAcc = m.acc | 0;
       break;
     }
 
@@ -298,6 +300,7 @@ function startRace(a, b, accents, code) {
 function decide(race) {
   if (race.over) return;
   race.over = true;
+  race.endAt = Date.now();
   if (race.graceTimer) clearTimeout(race.graceTimer);
   const { a, b } = race;
   const fa = race.fin.get(a), fb = race.fin.get(b);
@@ -307,10 +310,18 @@ function decide(race) {
   report(race, winner);
 }
 
+function wpmCalc(chars, ms) {
+  const min = ms / 60000;
+  return min <= 0 ? 0 : Math.max(0, Math.round((chars / 5) / min));
+}
 function statOf(race, ws) {
   const f = race.fin.get(ws);
+  // quem terminou: texto inteiro no tempo dele. quem não terminou: caracteres corretos
+  // dividido pelo tempo REAL até o fim da corrida (assim ficar parado derruba o PPM).
+  const chars = f ? race.text.length : (ws.c.lastIdx || 0);
+  const elapsed = f ? f.finishTime : Math.max(1, (race.endAt || Date.now()) - race.startAt);
   return { name: ws.c.name,
-           wpm: f ? f.wpm : (ws.c.lastWpm || 0),
+           wpm: wpmCalc(chars, elapsed),
            acc: f ? f.acc : (ws.c.lastAcc == null ? 100 : ws.c.lastAcc),
            finishTime: f ? f.finishTime : null, finished: !!f };
 }
@@ -338,10 +349,12 @@ function abandon(ws) {
   const race = ws.c.race;
   if (!race || race.over) return;
   race.over = true;
+  race.endAt = Date.now();
   if (race.graceTimer) clearTimeout(race.graceTimer);
   const opp = ws.c.opp;
   if (opp && opp.readyState === 1) {
-    submitScore(opp.c.playerId, opp.c.name, opp.c.lastWpm || 0, 'duelo');
+    const oppWpm = wpmCalc(opp.c.lastIdx || 0, Math.max(1, race.endAt - race.startAt));
+    submitScore(opp.c.playerId, opp.c.name, oppWpm, 'duelo');
     send(opp, 'opp_left', {});
     opp.c.state = 'idle'; opp.c.race = null; opp.c.opp = null;
     opp.c.rematchWith = null; opp.c.rematchWant = false;

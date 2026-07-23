@@ -316,6 +316,8 @@
 
   .hidden{display:none !important}
 
+  .caret.you.reject{background:var(--err) !important; animation:none}
+
   /* botão pulsando quando o oponente pede revanche */
   @keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 var(--you-soft)}50%{box-shadow:0 0 0 6px var(--you-soft)}}
   button.btn.pulse{animation:pulseBtn 1.1s ease-in-out infinite}
@@ -630,6 +632,7 @@ function ensureName(){
 
 function stopAll(){
   if(clockTimer){ clearInterval(clockTimer); clockTimer=null; }
+  if(ctx && ctx.mpTick){ clearInterval(ctx.mpTick); ctx.mpTick=null; }
 }
 function goHome(){
   stopAll();
@@ -858,8 +861,9 @@ function buildRace(){
   scr.style.transform='translateY(0)';
   ctx.lineH = parseFloat(getComputedStyle(passage).lineHeight) || 40;
   const _fs = parseFloat(getComputedStyle(passage).fontSize) || 24;
-  const _caretH = Math.round(_fs * 0.72);                       // altura ~ das maiúsculas
-  ctx.caretDy = Math.round((ctx.lineH - _fs)/2 + _fs*0.80 - _caretH - 1); // base logo acima da linha de base
+  const _caretH = Math.round(_fs * 0.74);                       // altura ~ das maiúsculas
+  const RISE = 0.20;   // ↑ aumente pra SUBIR o traço, diminua pra descer
+  ctx.caretDy = Math.round((ctx.lineH - _caretH)/2 - _fs*RISE);
   document.getElementById('caretYou').style.height = _caretH + 'px';
   document.getElementById('caretOpp').style.height = _caretH + 'px';
   if(ctx.timed){ ta.classList.add('timed'); ta.style.height=(3*ctx.lineH)+'px'; }
@@ -915,6 +919,7 @@ function beginRace(){
   ctx.startTime=Date.now();
   if(ctx.timed) ctx.deadline = ctx.startTime + ctx.duration;
   clockTimer=setInterval(updateClock, 100);
+  if(ctx.mp) ctx.mpTick=setInterval(()=>sendProgress(), 400); // mantém o PPM do oponente vivo mesmo parado
 }
 
 function onType(e){
@@ -923,37 +928,49 @@ function onType(e){
     ctx.waitingFirstKey=false; ctx.startTime=Date.now(); ctx.deadline=ctx.startTime+ctx.duration;
     clockTimer=setInterval(updateClock, 100);
   }
-  const prev = ctx.value;
-  let v=e.target.value;
+  const prev = ctx.value;                 // ctx.value é sempre um prefixo 100% correto
+  const raw = e.target.value;
 
-  // prefixo correto (quantos caracteres batem desde o início)
-  let cp=0;
-  while(cp<v.length && cp<ctx.text.length && v[cp]===ctx.text[cp]) cp++;
-  // regra anti-mash: não dá pra ir mais de 1 caractere além do erro — tem que corrigir pra seguir
-  const maxLen = Math.min(ctx.text.length, cp+1);
-  if(v.length>maxLen){ v=v.slice(0,maxLen); e.target.value=v; }
-
-  // acurácia real: conta cada caractere adicionado (mesmo os que serão corrigidos)
-  if(v.length>prev.length){
-    for(let i=prev.length;i<v.length;i++){
+  // acurácia real: conta cada tecla nova, inclusive as erradas (que serão bloqueadas)
+  if(raw.length>prev.length){
+    for(let i=prev.length;i<raw.length;i++){
       ctx.keys=(ctx.keys||0)+1;
-      if(v[i]!==ctx.text[i]) ctx.errs=(ctx.errs||0)+1;
+      if(i>=ctx.text.length || raw[i]!==ctx.text[i]) ctx.errs=(ctx.errs||0)+1;
     }
   }
+
+  // BLOQUEIO: aceita só o prefixo correto — letra errada não passa (o traço não avança)
+  let cp=0;
+  while(cp<raw.length && cp<ctx.text.length && raw[cp]===ctx.text[cp]) cp++;
+  const v = raw.slice(0, cp);
+  if(v.length !== raw.length){ e.target.value=v; flashReject(); }
 
   ctx.value=v; paint();
   positionCaret(document.getElementById('caretYou'), v.length);
   document.getElementById('caretYou').classList.toggle('blink', v.length===0);
   doScroll();
 
-  // progresso é medido pelos caracteres CORRETOS, não pelo tanto que foi digitado
-  document.getElementById('youFill').style.width = (cp/ctx.text.length*100)+'%';
-  if(ctx.mp){
-    const now=Date.now();
-    if(now-ctx.lastSent>110){ ctx.lastSent=now; send('progress',{idx:cp, wpm:currentWpm(now-ctx.startTime,cp)}); }
-  }
-  // só termina quando o texto inteiro está correto
-  if(cp>=ctx.text.length){ finishMine(); }
+  document.getElementById('youFill').style.width = (v.length/ctx.text.length*100)+'%';
+  if(ctx.mp) sendProgress();
+  if(v.length>=ctx.text.length){ finishMine(); }
+}
+
+// pisca o traço em vermelho quando uma tecla é bloqueada
+function flashReject(){
+  const c=document.getElementById('caretYou');
+  c.classList.add('reject');
+  clearTimeout(ctx._rej); ctx._rej=setTimeout(()=>c.classList.remove('reject'), 140);
+}
+
+// envia progresso (limitado); usado no teclado E num timer, pra o PPM decair quando parar de digitar
+function sendProgress(force){
+  if(!ctx || !ctx.mp || ctx.ended || !ctx.started) return;
+  const now=Date.now();
+  if(!force && ctx.lastSent && now-ctx.lastSent<90) return;
+  ctx.lastSent=now;
+  const correct=ctx.value.length;
+  const {acc}=stats();
+  send('progress',{idx:correct, wpm:currentWpm(now-ctx.startTime, correct), acc});
 }
 
 function stats(){
@@ -1003,8 +1020,9 @@ function finishMine(){
   document.getElementById('hidden-input').blur();
   const {correct,acc}=stats();
   if(ctx.solo){ finalizeSolo(ctx.finishTime); return; }
-  // online: informa o servidor; o resultado chega via race_over
-  send('progress', {idx:ctx.value.length, wpm:currentWpm(ctx.finishTime,correct)});
+  // online: para de mandar progresso periódico e informa o servidor; o resultado chega via race_over
+  if(ctx.mpTick){ clearInterval(ctx.mpTick); ctx.mpTick=null; }
+  send('progress', {idx:ctx.value.length, wpm:currentWpm(ctx.finishTime,correct), acc});
   send('finished', {finishTime:ctx.finishTime, wpm:currentWpm(ctx.finishTime,correct), acc});
   document.getElementById('stTime').textContent = (ctx.finishTime/1000).toFixed(1)+'s ✓';
 }
