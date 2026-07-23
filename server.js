@@ -106,7 +106,12 @@ const server = http.createServer((req, res) => {
       res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end('<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;padding:2rem"><h1>404</h1><p>Arquivo não encontrado no servidor.</p></body>');
     }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
+    const ext = path.extname(filePath);
+    const revalidate = (ext === '.html' || ext === '.js' || ext === '.webmanifest');
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Cache-Control': revalidate ? 'no-cache' : 'public, max-age=86400'
+    });
     res.end(data);
   });
 });

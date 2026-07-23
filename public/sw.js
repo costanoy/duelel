@@ -1,14 +1,12 @@
 /* Service worker do Duelel.
-   Estratégia:
-   - Navegações (abrir o app): network-first — pega a versão mais nova quando online,
-     e cai pro cache quando offline (assim Sozinho e 30 segundos funcionam sem internet).
-   - Ícones/manifesto e outros GET do próprio site: cache-first, atualizando em segundo plano.
+   Estratégia à prova de "atualização que não aparece":
+   - HTML (abrir o app): SEMPRE rede primeiro. O index.html nunca fica preso no cache;
+     ele só é usado do cache quando você está offline.
+   - Ícones/manifesto: cache primeiro (mudam raramente), atualizando por baixo.
    - WebSocket não passa pelo service worker, então o modo online não é afetado.
-   Ao publicar uma nova versão, troque o número em CACHE para forçar a atualização. */
-const CACHE = 'duelel-v1';
+   Sempre que mudar a estratégia deste arquivo, incremente o número de CACHE. */
+const CACHE = 'duelel-v2';
 const SHELL = [
-  '/',
-  '/index.html',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -32,29 +30,28 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Navegações: rede primeiro, cache como reserva (offline)
-  if (req.mode === 'navigate') {
+  // HTML/navegações: rede primeiro; cache só como reserva offline.
+  if (req.mode === 'navigate' || (url.origin === self.location.origin && url.pathname.endsWith('.html'))) {
     e.respondWith(
       fetch(req)
-        .then((res) => { cachePut(req, res.clone()); return res; })
-        .catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
+        .then((res) => { caches.open(CACHE).then((c) => c.put('/index.html', res.clone())).catch(() => {}); return res; })
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
 
-  // Só cuidamos de GET do mesmo domínio (fontes externas o navegador resolve)
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return; // fontes externas o navegador resolve
 
-  // Estáticos do próprio site: cache primeiro, atualizando por baixo
+  // Estáticos (ícones, manifesto): cache primeiro, atualizando por baixo.
   e.respondWith(
     caches.match(req).then((cached) => {
-      const net = fetch(req).then((res) => { cachePut(req, res.clone()); return res; }).catch(() => cached);
+      const net = fetch(req).then((res) => {
+        if (res && res.status === 200 && res.type !== 'opaque') {
+          caches.open(CACHE).then((c) => c.put(req, res.clone())).catch(() => {});
+        }
+        return res;
+      }).catch(() => cached);
       return cached || net;
     })
   );
 });
-
-function cachePut(req, res) {
-  if (!res || res.status !== 200 || res.type === 'opaque') return;
-  caches.open(CACHE).then((c) => c.put(req, res)).catch(() => {});
-}
