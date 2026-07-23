@@ -75,6 +75,14 @@
   /* ---------- centered stage ---------- */
   main{margin:auto 0; width:100%}
 
+  /* mobile: conteúdo colado no topo (pro teclado não cobrir o texto) e sem wordmark no header */
+  @media(max-width:620px){
+    header{margin-bottom:18px}
+    main{margin:0 0 auto}
+    .brand b{display:none}
+    footer{display:none}
+  }
+
   /* ---------- home ---------- */
   .home{display:flex; flex-direction:column; gap:26px; align-items:center; text-align:center}
   .home h1{
