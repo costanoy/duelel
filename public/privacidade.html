@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade — Duelel</title>
+<meta name="theme-color" content="#15161a">
+<link rel="icon" href="/icons/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15161a; --surface:#22242b; --line:#2c2f38;
+    --sub:#8b909c; --text:#e8e8e2; --you:#f2c14e; --opp:#49c5e6;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:40px 22px 80px}
+  header{display:flex; align-items:center; gap:11px; margin-bottom:8px}
+  .logo{width:24px; height:24px; position:relative; flex:none}
+  .logo .car{position:absolute; height:4px; border-radius:2px; left:0}
+  .logo .c1{top:6px; width:20px; background:var(--you)}
+  .logo .c2{top:13px; width:14px; background:var(--opp)}
+  header b{font-family:var(--mono); font-weight:700; font-size:16px}
+  header b .a{color:var(--you)} header b .b{color:var(--opp)}
+  a{color:var(--you)}
+  a.back{font-family:var(--mono); font-size:13px; color:var(--sub); text-decoration:none; display:inline-block; margin-bottom:28px}
+  a.back:hover{color:var(--you)}
+  h1{font-family:var(--mono); font-size:26px; letter-spacing:-.5px; margin:26px 0 4px}
+  .updated{color:var(--sub); font-size:13px; font-family:var(--mono); margin-bottom:28px}
+  h2{font-family:var(--mono); font-size:16px; color:var(--you); margin:34px 0 10px; letter-spacing:-.2px}
+  p, li{color:#c9c9c2; font-size:15px}
+  ul{padding-left:20px}
+  li{margin-bottom:6px}
+  .box{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin:16px 0}
+  .box p{margin:0; font-size:14px; color:var(--sub)}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px}
+  th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); color:#c9c9c2}
+  th{color:var(--text); font-family:var(--mono); font-weight:600; font-size:12.5px}
+  footer{margin-top:50px; color:var(--sub); font-size:12.5px; font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← voltar ao Duelel</a>
+  <header>
+    <div class="logo"><div class="car c1"></div><div class="car c2"></div></div>
+    <b><span class="a">Duel</span><span class="b">el</span></b>
+  </header>
+
+  <h1>Política de Privacidade</h1>
+  <div class="updated">Última atualização: 27 de julho de 2026</div>
+
+  <p>O Duelel é um jogo simples de corrida de digitação, feito e mantido de forma independente. Esta página explica, de forma direta, quais dados o app usa e por quê. Não vendemos, não alugamos e não usamos seus dados para publicidade.</p>
+
+  <h2>1. Quem mantém o app</h2>
+  <p>O Duelel é um projeto pessoal e independente, hospedado em <strong>duelel.cyberhat.com.br</strong>. Não há uma empresa por trás dele — é um app feito para fins de estudo e portfólio.</p>
+
+  <h2>2. Não exigimos cadastro</h2>
+  <p>Você não precisa criar conta, e-mail ou senha para jogar. O único dado que você digita é um <strong>apelido</strong> (nome de exibição), usado apenas para te identificar durante as partidas e no ranking.</p>
+
+  <h2>3. Quais dados são usados e para quê</h2>
+  <table>
+    <tr><th>Dado</th><th>Para quê</th><th>Onde fica</th></tr>
+    <tr><td>Apelido digitado por você</td><td>Aparecer nas partidas e no ranking</td><td>Seu aparelho + servidor</td></tr>
+    <tr><td>Identificador aleatório do jogador</td><td>Associar suas pontuações no ranking, sem usar dados pessoais</td><td>Seu aparelho + servidor</td></tr>
+    <tr><td>Plataforma (celular ou computador)</td><td>Parear você com adversários da mesma plataforma</td><td>Seu aparelho + servidor</td></tr>
+    <tr><td>Preferência de acentos</td><td>Parear você com adversários com a mesma preferência</td><td>Seu aparelho + servidor</td></tr>
+    <tr><td>Pontuação (PPM) e precisão</td><td>Exibir o ranking</td><td>Servidor</td></tr>
+    <tr><td>Endereço IP</td><td>Funcionamento técnico da conexão em tempo real (todo servidor recebe isso automaticamente)</td><td>Registros técnicos do servidor</td></tr>
+  </table>
+
+  <div class="box">
+    <p>O identificador de jogador é um código aleatório gerado no seu próprio aparelho (não é seu e-mail, CPF ou qualquer documento). Se você limpar os dados do navegador ou desinstalar o app, um novo identificador é criado e o vínculo com o ranking anterior se perde.</p>
+  </div>
+
+  <h2>4. Onde os dados ficam guardados</h2>
+  <p>Duas partes:</p>
+  <ul>
+    <li><strong>No seu aparelho</strong> (armazenamento local do navegador): seu apelido, o identificador aleatório e sua preferência de modo de treino. Isso nunca sai do seu aparelho, exceto quando enviado ao servidor para o jogo funcionar (itens abaixo).</li>
+    <li><strong>No servidor</strong> (banco de dados simples, sem serviços de terceiros de análise ou publicidade): o ranking de pontuações, associado ao identificador aleatório.</li>
+  </ul>
+
+  <h2>5. Duelo online e salas privadas</h2>
+  <p>Para o duelo em tempo real funcionar, seu apelido, plataforma, preferência de acentos e o progresso da sua digitação são transmitidos ao servidor e repassados ao seu adversário durante a partida — é assim que os dois jogadores veem o progresso um do outro. Essas informações não são armazenadas permanentemente além do necessário para a partida e o ranking.</p>
+
+  <h2>6. Cookies, anúncios e rastreamento</h2>
+  <p>O Duelel <strong>não exibe anúncios</strong>, <strong>não usa cookies de rastreamento</strong> e <strong>não compartilha dados com redes de publicidade ou análise de terceiros</strong>. O único armazenamento usado no seu aparelho é o necessário para lembrar seu apelido e preferências entre uma visita e outra.</p>
+
+  <h2>7. Compartilhamento com terceiros</h2>
+  <p>Não vendemos nem compartilhamos seus dados com terceiros para fins comerciais. Os dados passam apenas pela infraestrutura técnica necessária para o app funcionar (o serviço de hospedagem que mantém o servidor no ar), que atua apenas como provedor técnico.</p>
+
+  <h2>8. Seus direitos</h2>
+  <p>Como não usamos e-mail, login ou qualquer identificação pessoal direta, não há uma "conta" para excluir. Ainda assim, você pode, a qualquer momento:</p>
+  <ul>
+    <li>Limpar os dados do site no seu navegador (ou desinstalar o app) para apagar seu apelido e identificador salvos localmente;</li>
+    <li>Solicitar a remoção do seu registro do ranking, entrando em contato pelo e-mail abaixo e informando seu apelido e, se possível, o horário aproximado das partidas.</li>
+  </ul>
+
+  <h2>9. Crianças e adolescentes</h2>
+  <p>O Duelel não coleta dados sensíveis nem exige idade mínima para o modo de treino, mas não é direcionado especificamente ao público infantil. Caso um responsável identifique o uso por uma criança e deseje a remoção de algum dado, pode entrar em contato pelo canal abaixo.</p>
+
+  <h2>10. Alterações nesta política</h2>
+  <p>Esta política pode ser atualizada conforme o app evolui. A data no topo desta página sempre indica a versão mais recente.</p>
+
+  <h2>11. Contato</h2>
+  <p>Dúvidas ou pedidos relacionados a esta política podem ser enviados para: <a href="mailto:vinicostamaga@outlook.com">vinicostamaga@outlook.com</a></p>
+
+  <footer>Duelel — duelel.cyberhat.com.br</footer>
+</div>
+</body>
+</html>
