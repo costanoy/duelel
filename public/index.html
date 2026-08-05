@@ -6,7 +6,7 @@
 <title>Duelel — corrida de digitação</title>
 <meta name="description" content="Corrida de digitação em tempo real. Você contra o tempo ou contra outro jogador.">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#15161a">
+<meta name="theme-color" content="#1e1f23">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,10 +18,10 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#15161a;
-    --bg2:#1b1d23;
-    --surface:#22242b;
-    --line:#2c2f38;
+    --bg:#1e1f23;
+    --bg2:#24262c;
+    --surface:#2b2d34;
+    --line:#32353e;
     --sub:#565b67;      /* texto ainda não digitado */
     --text:#e8e8e2;     /* texto correto / títulos */
     --dim:#8b909c;      /* rótulos secundários */
@@ -47,30 +47,53 @@
   .wrap{
     min-height:100dvh;
     display:flex; flex-direction:column;
-    max-width:920px; margin:0 auto;
-    padding:22px 20px 32px;
+    max-width:1040px; margin:0 auto;
+    padding:30px 8px 40px;
   }
 
   /* ---------- top bar ---------- */
   header{
+    position:relative;
     display:flex; align-items:center; justify-content:space-between;
     margin-bottom:auto;
   }
-  .brand{display:flex; align-items:center; gap:11px; cursor:pointer}
+  .brand{display:flex; align-items:center; gap:14px; cursor:pointer}
   .logo{
-    width:26px; height:26px; position:relative; flex:none;
+    width:39px; height:39px; position:relative; flex:none;
   }
-  .logo .car{position:absolute; height:4px; border-radius:2px; left:0}
-  .logo .c1{top:7px; width:22px; background:var(--you)}
-  .logo .c2{top:15px; width:15px; background:var(--opp)}
-  .brand b{font-family:var(--mono); font-weight:700; font-size:16px; letter-spacing:-.5px}
+  .logo .car{position:absolute; height:6px; border-radius:3px; left:0}
+  .logo .c1{top:10px; width:33px; background:var(--you)}
+  .logo .c2{top:22px; width:22px; background:var(--opp)}
+  .brand b{font-family:var(--mono); font-weight:700; font-size:24.5px; letter-spacing:-.5px}
   .brand span{color:var(--dim); font-weight:500}
   .plat{
-    font-family:var(--mono); font-size:12px; color:var(--dim);
+    font-family:var(--mono); font-size:15px; color:var(--dim);
     border:1px solid var(--line); padding:5px 10px; border-radius:999px;
     display:flex; align-items:center; gap:6px;
   }
   .plat .dot{width:6px; height:6px; border-radius:50%; background:var(--you)}
+
+  /* switch de idioma (PT | EN), centralizado no topo da página */
+  .lang-switch{
+    position:relative; display:inline-flex; width:104px; height:34px;
+    background:var(--bg2); border:1px solid var(--line); border-radius:999px;
+    padding:3px; cursor:pointer; user-select:none;
+  }
+  #langSwitch{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
+  .lang-thumb{
+    position:absolute; top:3px; left:3px; width:calc(50% - 3px); height:calc(100% - 6px);
+    background:var(--you); border-radius:999px; transition:transform .18s ease;
+  }
+  .lang-switch.is-en .lang-thumb{transform:translateX(100%); background:var(--opp)}
+  .lang-switch.dragging .lang-thumb{transition:none}
+  .lang-opt{
+    position:relative; z-index:1; flex:1; cursor:pointer;
+    font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.5px;
+    color:var(--dim); transition:color .18s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lang-switch:not(.is-en) .lang-opt[data-lang="pt"]{color:#1a1400}
+  .lang-switch.is-en .lang-opt[data-lang="en"]{color:#00252e}
 
   /* ---------- centered stage ---------- */
   main{margin:auto 0; width:100%}
@@ -84,51 +107,90 @@
   }
 
   /* ---------- home ---------- */
-  .home{display:flex; flex-direction:column; gap:26px; align-items:center; text-align:center}
+  .home{display:flex; flex-direction:column; gap:36px; align-items:center; text-align:center}
   .home h1{
-    font-family:var(--mono); font-weight:700; font-size:clamp(30px,7vw,52px);
+    font-family:var(--mono); font-weight:700; font-size:clamp(34px,7vw,58px);
     letter-spacing:-2px; line-height:1;
   }
   .home h1 .a{color:var(--you)} .home h1 .b{color:var(--opp)}
-  .home p.lead{color:var(--dim); max-width:440px; font-size:15px; line-height:1.55}
+  .home p.lead{color:var(--dim); max-width:440px; font-size:19px; line-height:1.55}
+  .name-block{display:flex; flex-direction:column; align-items:center; gap:9px; margin-top:14px}
   .name-row{display:flex; gap:10px; align-items:center}
-  .name-row label{font-size:13px; color:var(--dim)}
+  .name-row label{font-size:17px; color:var(--dim); min-width:46px; text-align:right}
   input.txt{
     background:var(--surface); border:1px solid var(--line); color:var(--text);
-    font-family:var(--mono); font-size:15px; padding:11px 14px; border-radius:10px;
+    font-family:var(--mono); font-size:19px; padding:11px 14px; border-radius:10px;
     width:170px; text-align:center; outline:none; transition:border-color .15s;
   }
   input.txt:focus{border-color:var(--you)}
-  .modes{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; width:100%; max-width:660px}
+  .modes{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; width:100%; max-width:880px}
   @media(max-width:620px){.modes{grid-template-columns:1fr}}
   .mode{
     background:var(--surface); border:1px solid var(--line); border-radius:14px;
-    padding:20px 18px; text-align:left; cursor:pointer;
+    padding:16px 28px; text-align:left; cursor:pointer;
     transition:border-color .15s, transform .12s, background .15s;
-    display:flex; flex-direction:column; gap:7px;
+    display:flex; flex-direction:column; gap:8px;
   }
   .mode:hover{border-color:var(--you); transform:translateY(-2px)}
-  .mode .k{font-family:var(--mono); font-size:12px; color:var(--you)}
+  .mode .k{font-family:var(--mono); font-size:15px; color:var(--you)}
   .mode:nth-child(2) .k{color:var(--opp)}
   .mode:nth-child(3) .k{color:var(--dim)}
-  .mode h3{font-size:16px; font-weight:600}
-  .mode small{color:var(--dim); font-size:13px; line-height:1.45}
-  .opts{display:flex; gap:20px; align-items:center; justify-content:center; font-size:13px}
-  .hint{color:var(--dim); font-size:12.5px; max-width:520px; line-height:1.5; opacity:.85}
+  .mode h3{font-size:20px; font-weight:600; min-height:2.6em; display:flex; align-items:center}
+  .mode small{color:var(--dim); font-size:17px; line-height:1.6; min-height:4.8em; display:block}
+  .opts-row3{position:relative; display:flex; justify-content:center; width:100%; max-width:880px; margin:0 auto}
+  #optsRow{position:absolute; right:0; top:50%; transform:translateY(-50%); white-space:nowrap}
+
+  /* fade rápido: usado no modo foco e ao esconder acentos por idioma — some rápido, mas mantém o espaço (sem pulos) */
+  .bars, #soloToggle, #tapHint, #restartRow, #platBadge, footer, #optsRow{
+    transition: opacity .12s ease, visibility 0s linear 0s;
+  }
+  .fx-off{
+    opacity:0 !important; visibility:hidden !important; pointer-events:none !important;
+    transition: opacity .12s ease, visibility 0s linear .12s !important;
+  }
+  .opts{display:flex; gap:20px; align-items:center; justify-content:center; font-size:17px}
+  .hint{color:var(--dim); font-size:15.5px; max-width:520px; line-height:1.5; opacity:.85}
 
   /* ---------- searching / lobby ---------- */
-  .status{display:flex; flex-direction:column; align-items:center; gap:20px; text-align:center}
+  .status{display:flex; flex-direction:column; align-items:center; gap:28px; text-align:center}
   .spinner{width:42px; height:42px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--you); animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .status h2{font-family:var(--mono); font-size:22px; font-weight:500}
-  .status .sub{color:var(--dim); font-size:14px; max-width:460px; line-height:1.5}
+  .status h2{font-family:var(--mono); font-size:28px; font-weight:500}
+  .status .sub{color:var(--dim); font-size:18px; max-width:460px; line-height:1.5}
+
+  /* tela "prontos?" */
+  .ready-wrap{display:flex; flex-direction:column; gap:12px; width:100%; max-width:380px}
+  .ready-row{
+    display:flex; align-items:center; gap:14px; padding:14px 18px;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    transition:border-color .15s, background .15s;
+  }
+  .ready-row.you{cursor:pointer}
+  .ready-row.opp{cursor:default; opacity:.92}
+  .ready-box{
+    width:24px; height:24px; border-radius:7px; border:1.5px solid var(--line);
+    background:var(--bg2); flex:none; display:flex; align-items:center; justify-content:center;
+    transition:all .15s; position:relative;
+  }
+  .ready-box::after{
+    content:''; position:absolute; width:11px; height:6px; border-left:2.5px solid #1a1400;
+    border-bottom:2.5px solid #1a1400; transform:rotate(-45deg) translateY(-1px); opacity:0; transition:opacity .15s;
+  }
+  .ready-row.you.checked{border-color:var(--you); background:var(--you-soft)}
+  .ready-row.you.checked .ready-box{background:var(--you); border-color:var(--you)}
+  .ready-row.you.checked .ready-box::after{opacity:1}
+  .ready-row.opp.checked{border-color:var(--opp); background:var(--opp-soft)}
+  .ready-row.opp.checked .ready-box{background:var(--opp); border-color:var(--opp)}
+  .ready-row.opp.checked .ready-box::after{opacity:1; border-color:#00252e}
+  .ready-name{flex:1; text-align:left; font-family:var(--mono); font-size:17px; color:var(--text); font-weight:600}
+  .ready-status{font-size:13px; color:var(--dim); font-family:var(--mono)}
 
   /* ---------- race ---------- */
-  .race{width:100%; display:flex; flex-direction:column; gap:20px}
-  .bars{display:flex; flex-direction:column; gap:11px}
+  .race{width:100%; display:flex; flex-direction:column; gap:28px}
+  .bars{display:flex; flex-direction:column; gap:15px}
   .bar-row{display:flex; align-items:center; gap:12px}
   .bar-tag{
-    font-family:var(--mono); font-size:12.5px; width:auto; min-width:120px;
+    font-family:var(--mono); font-size:15.5px; width:auto; min-width:120px;
     display:flex; align-items:center; gap:8px; flex:none;
   }
   .bar-tag .who{color:var(--text); font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
@@ -140,8 +202,8 @@
 
   .text-area{position:relative; cursor:text}
   #passage{
-    font-family:var(--mono); font-size:clamp(20px,3.3vw,26px); line-height:1.75;
-    color:var(--sub); letter-spacing:.3px; position:relative; word-break:break-word;
+    font-family:var(--mono); font-size:clamp(23px,3.7vw,31px); line-height:1.6;
+    color:var(--sub); letter-spacing:.3px; word-spacing:-2px; position:relative; word-break:break-word;
     padding:2px 0;
   }
   #passage .ch{transition:color .05s}
@@ -149,7 +211,7 @@
   #passage .ch.bad{color:var(--err)}
   #passage .ch.bad.sp{background:var(--err); border-radius:2px}
   .caret{
-    position:absolute; width:2.5px; height:1.5em; top:0; left:0; border-radius:2px;
+    position:absolute; width:4px; height:1.5em; top:0; left:0; border-radius:2.5px;
     transition:left .09s ease, top .09s ease; pointer-events:none;
   }
   .caret.you{background:var(--you)}
@@ -157,21 +219,21 @@
   .caret.blink{animation:blink 1.05s steps(1) infinite}
   @keyframes blink{50%{opacity:0}}
   .caret .lbl{
-    position:absolute; top:-16px; left:-2px; font-family:var(--mono); font-size:10px;
+    position:absolute; top:-16px; left:-2px; font-family:var(--mono); font-size:13px;
     padding:1px 5px; border-radius:4px; white-space:nowrap; font-weight:600;
   }
   .caret.you .lbl{background:var(--you); color:#1a1400}
   .caret.opp .lbl{background:var(--opp); color:#00252e}
 
-  #hidden-input{position:absolute; opacity:0; height:1px; width:1px; top:0; left:0; border:0; padding:0; font-size:16px}
+  #hidden-input{position:absolute; opacity:0; height:1px; width:1px; top:0; left:0; border:0; padding:0; font-size:20px}
 
   .tap-hint{
     display:none; margin-top:10px; text-align:center; color:var(--dim);
-    font-size:13px; font-family:var(--mono);
+    font-size:17px; font-family:var(--mono);
   }
   .tap-hint.show{display:block}
 
-  .restat{display:flex; gap:26px; justify-content:center; margin-top:4px; color:var(--dim); font-family:var(--mono); font-size:13px}
+  .restat{display:flex; gap:26px; justify-content:center; margin-top:4px; color:var(--dim); font-family:var(--mono); font-size:17px}
   .restat b{color:var(--text); font-weight:600}
 
   /* countdown overlay */
@@ -179,40 +241,40 @@
     position:fixed; inset:0; background:rgba(21,22,26,.86); backdrop-filter:blur(3px);
     display:flex; align-items:center; justify-content:center; z-index:50;
   }
-  .count{font-family:var(--mono); font-weight:700; font-size:130px; color:var(--you); animation:pop .6s ease}
+  .count{font-family:var(--mono); font-weight:700; font-size:166px; color:var(--you); animation:pop .6s ease}
   .count.go{color:var(--opp)}
   @keyframes pop{0%{transform:scale(.4); opacity:0}45%{transform:scale(1.12); opacity:1}100%{transform:scale(1)}}
 
   /* result */
   .result{
     background:var(--surface); border:1px solid var(--line); border-radius:18px;
-    padding:30px; width:100%; max-width:520px; margin:0 auto; text-align:center;
-    display:flex; flex-direction:column; gap:22px;
+    padding:38px 30px; width:100%; max-width:520px; margin:0 auto; text-align:center;
+    display:flex; flex-direction:column; gap:30px;
   }
-  .verdict{font-family:var(--mono); font-size:32px; font-weight:700; letter-spacing:-1px}
+  .verdict{font-family:var(--mono); font-size:41px; font-weight:700; letter-spacing:-1px}
   .verdict.win{color:var(--you)} .verdict.lose{color:var(--opp)} .verdict.tie{color:var(--text)}
   .rgrid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
   .rcell{background:var(--surface); padding:20px 12px 16px; display:flex; flex-direction:column; gap:6px; align-items:center}
-  .rcell .rn{font-family:var(--mono); font-size:13px; font-weight:600}
+  .rcell .rn{font-family:var(--mono); font-size:17px; font-weight:600}
   .rcell.you .rn{color:var(--you)} .rcell.opp .rn{color:var(--opp)}
   .rcell .hero{display:flex; align-items:baseline; gap:4px}
-  .rcell .big{font-family:var(--mono); font-size:46px; font-weight:700; line-height:1}
-  .rcell .unit{font-size:13px; color:var(--dim); font-family:var(--mono)}
-  .rcell .acc{font-size:11.5px; color:var(--dim); font-family:var(--mono); opacity:.8}
+  .rcell .big{font-family:var(--mono); font-size:59px; font-weight:700; line-height:1}
+  .rcell .unit{font-size:17px; color:var(--dim); font-family:var(--mono)}
+  .rcell .acc{font-size:14.5px; color:var(--dim); font-family:var(--mono); opacity:.8}
 
   /* solo big result */
   .solo-res{display:flex; gap:28px; justify-content:center; align-items:flex-end}
   .solo-res .item{display:flex; flex-direction:column; gap:4px}
-  .solo-res .big{font-family:var(--mono); font-size:64px; font-weight:700; color:var(--you); line-height:1}
-  .solo-res .big.sm{font-size:30px; opacity:.9}
+  .solo-res .big{font-family:var(--mono); font-size:82px; font-weight:700; color:var(--you); line-height:1}
+  .solo-res .big.sm{font-size:38px; opacity:.9}
   .solo-res .item:not(.hero){padding-bottom:8px}
-  .solo-res .lab{color:var(--dim); font-size:12.5px; font-family:var(--mono)}
+  .solo-res .lab{color:var(--dim); font-size:15.5px; font-family:var(--mono)}
   .solo-res .hero .lab{color:var(--you); opacity:.75}
 
   /* buttons */
   .btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
   button.btn{
-    font-family:var(--mono); font-size:14px; font-weight:500; cursor:pointer;
+    font-family:var(--mono); font-size:18px; font-weight:500; cursor:pointer;
     padding:11px 20px; border-radius:10px; border:1px solid var(--line);
     background:var(--surface); color:var(--text); transition:all .14s;
   }
@@ -222,7 +284,7 @@
   button.btn.ghost{background:transparent}
   button.btn:disabled{opacity:.4; cursor:not-allowed}
 
-  footer{margin-top:auto; padding-top:26px; text-align:center; color:var(--dim); font-size:12px}
+  footer{margin-top:auto; padding-top:26px; text-align:center; color:var(--dim); font-size:15px}
   footer a{color:var(--dim)}
 
   /* accent toggle (desktop) */
@@ -241,7 +303,7 @@
   .acc-toggle input:checked + .acc-box::after{transform:scale(1)}
   .acc-toggle input:focus-visible + .acc-box{box-shadow:0 0 0 3px var(--you-soft)}
   .acc-txt{
-    font-family:var(--mono); font-size:14px; font-weight:500; letter-spacing:.5px;
+    font-family:var(--mono); font-size:18px; font-weight:500; letter-spacing:.5px;
     color:var(--dim); transition:color .15s;
   }
   .acc-toggle input:checked ~ .acc-txt{color:var(--text)}
@@ -249,7 +311,7 @@
   /* shareable link box */
   .link-box{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; max-width:480px}
   .link-field{
-    flex:1; min-width:220px; font-family:var(--mono); font-size:13px; color:var(--you);
+    flex:1; min-width:220px; font-family:var(--mono); font-size:17px; color:var(--you);
     background:var(--bg2); border:1px solid var(--line); border-radius:10px;
     padding:12px 14px; outline:none; text-overflow:ellipsis;
   }
@@ -259,20 +321,20 @@
   .lb-list{display:flex; flex-direction:column; gap:6px; width:100%; max-width:460px}
   .lb-group{display:flex; flex-direction:column; gap:6px; width:100%}
   .lb-group + .lb-group{margin-top:20px}
-  .lb-head{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text); text-align:left; padding:0 2px 4px; border-bottom:1px solid var(--line); margin-bottom:2px}
+  .lb-head{font-family:var(--mono); font-size:17px; font-weight:600; color:var(--text); text-align:left; padding:0 2px 4px; border-bottom:1px solid var(--line); margin-bottom:2px}
   .lb-row{
     display:flex; align-items:center; gap:12px; padding:11px 14px;
     background:var(--surface); border:1px solid var(--line); border-radius:10px;
-    font-family:var(--mono); font-size:14px;
+    font-family:var(--mono); font-size:18px;
   }
   .lb-row.me{border-color:var(--you); background:var(--you-soft)}
   .lb-rank{color:var(--dim); width:26px; font-weight:700; text-align:right; flex:none}
   .lb-row:nth-child(1) .lb-rank{color:var(--you)}
   .lb-name{flex:1; text-align:left; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .lb-mode{font-size:11px; color:var(--dim); border:1px solid var(--line); padding:2px 7px; border-radius:999px}
+  .lb-mode{font-size:14px; color:var(--dim); border:1px solid var(--line); padding:2px 7px; border-radius:999px}
   .lb-ppm{color:var(--you); font-weight:700; min-width:64px; text-align:right}
-  .lb-empty{color:var(--dim); font-family:var(--mono); font-size:14px; padding:20px}
-  .lb-link{font-size:13px; opacity:.85}
+  .lb-empty{color:var(--dim); font-family:var(--mono); font-size:18px; padding:20px}
+  .lb-link{font-size:17px; opacity:.85; min-width:170px}
 
   /* treino: segmented control Tempo/Texto */
   .seg{
@@ -280,7 +342,7 @@
     background:var(--bg2); border:1px solid var(--line); border-radius:9px; padding:3px;
   }
   .seg-opt{
-    flex:1; font-family:var(--mono); font-size:12.5px; font-weight:500; cursor:pointer;
+    flex:1; font-family:var(--mono); font-size:15.5px; font-weight:500; cursor:pointer;
     padding:7px 6px; border-radius:6px; border:0; background:transparent; color:var(--dim);
     transition:all .14s;
   }
@@ -293,7 +355,7 @@
   .solo-toggle{display:flex; justify-content:center}
   .solo-toggle .seg{max-width:220px; width:100%}
   .btn-restart{
-    font-family:var(--mono); font-size:12.5px; color:var(--dim); background:transparent;
+    font-family:var(--mono); font-size:15.5px; color:var(--dim); background:transparent;
     border:1px solid var(--line); border-radius:8px; padding:8px 14px; cursor:pointer;
     display:inline-flex; align-items:center; gap:8px; transition:all .14s;
   }
@@ -302,7 +364,7 @@
     box-shadow:0 0 0 3px var(--you-soft);
   }
   .btn-restart .kbd{
-    font-size:10.5px; color:var(--dim); border:1px solid var(--line);
+    font-size:13.5px; color:var(--dim); border:1px solid var(--line);
     padding:1px 5px; border-radius:4px; background:var(--bg2);
   }
   .btn-restart:hover .kbd, .btn-restart:focus-visible .kbd{color:var(--you); border-color:var(--you)}
@@ -310,7 +372,7 @@
   /* nome obrigatório */
   input.txt.err{border-color:var(--err); animation:shake .3s}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  .name-err{color:var(--err); font-size:12px; font-family:var(--mono); height:14px; margin-top:-14px; opacity:0; transition:opacity .15s}
+  .name-err{color:var(--err); font-size:15px; font-family:var(--mono); height:14px; margin-top:-9px; opacity:0; transition:opacity .15s}
   .name-err.show{opacity:1}
 
   /* banner de convite */
@@ -319,7 +381,7 @@
     padding:14px 18px; display:flex; flex-direction:column; gap:10px; align-items:center;
     max-width:440px;
   }
-  .invite p{color:var(--text); font-size:14px; font-family:var(--mono)}
+  .invite p{color:var(--text); font-size:18px; font-family:var(--mono)}
 
   /* modo tempo: janela de poucas linhas que rola */
   .text-area.windowed{overflow:hidden}
@@ -341,6 +403,11 @@
       <div class="logo"><div class="car c1"></div><div class="car c2"></div></div>
       <b><span style="color:var(--you)">Duel</span><span style="color:var(--opp)">el</span></b>
     </div>
+    <div class="lang-switch" id="langSwitch">
+      <span class="lang-thumb" id="langThumb"></span>
+      <span class="lang-opt" data-lang="pt">PT</span>
+      <span class="lang-opt" data-lang="en">EN</span>
+    </div>
     <div class="plat" id="platBadge"><span class="dot"></span><span id="platText">—</span></div>
   </header>
 
@@ -351,44 +418,44 @@
         <h1><span class="a">Duel</span><span class="b">el</span></h1>
       </div>
 
-      <div class="name-row">
-        <label for="nick">seu nome</label>
-        <input id="nick" class="txt" maxlength="14" placeholder="">
+      <div class="name-block">
+        <div class="name-row">
+          <label for="nick" data-i18n="name_label">Nome</label>
+          <input id="nick" class="txt" maxlength="14" placeholder="">
+        </div>
+        <div class="name-err" id="nameErr" data-i18n="name_error">digite um nome para jogar</div>
       </div>
-      <div class="name-err" id="nameErr">digite um nome para jogar</div>
 
       <div class="invite hidden" id="inviteBanner">
-        <p>🏁 Você foi convidado para um duelo. Digite seu nome e entre na sala.</p>
-        <button class="btn primary" onclick="joinPending()">Entrar na sala →</button>
+        <p data-i18n="invite_text">🏁 Você foi convidado para um duelo. Digite seu nome e entre na sala.</p>
+        <button class="btn primary" onclick="joinPending()" data-i18n="invite_btn">Entrar na sala →</button>
       </div>
 
       <div class="modes">
         <div class="mode" onclick="startQuick()">
-          <span class="k">01 · online</span>
-          <h3>Partida rápida</h3>
-          <small>Entra na fila e enfrenta o próximo oponente disponível na sua plataforma.</small>
+          <span class="k" data-i18n="mode1_k">01 · online</span>
+          <h3 data-i18n="mode1_title">Procurar partida</h3>
         </div>
         <div class="mode" onclick="createRoom()">
-          <span class="k">02 · privado</span>
-          <h3>Sala com amigo</h3>
-          <small>Gera um link pra você mandar e desafiar quem quiser diretamente.</small>
+          <span class="k" data-i18n="mode2_k">02 · privado</span>
+          <h3 data-i18n="mode2_title">Sala com amigo</h3>
         </div>
         <div class="mode" onclick="startSoloSelected()">
-          <span class="k">03 · treino</span>
-          <h3>Sozinho</h3>
-          <small>Pratique sem oponente. Você contra o tempo — ou contra um texto.</small>
+          <span class="k" data-i18n="mode3_k">03 · treino</span>
+          <h3 data-i18n="mode3_title">Treinar sozinho</h3>
         </div>
       </div>
 
-      <div class="opts" id="optsRow">
-        <label class="acc-toggle" id="accToggle">
-          <input type="checkbox" id="optAccents" checked>
-          <span class="acc-box"></span>
-          <span class="acc-txt">Acentos</span>
-        </label>
+      <div class="opts-row3">
+        <button class="btn ghost lb-link" onclick="openLeaderboard()" data-i18n="leaderboard_link">🏆 Ranking</button>
+        <div class="opts" id="optsRow">
+          <label class="acc-toggle" id="accToggle">
+            <input type="checkbox" id="optAccents" checked>
+            <span class="acc-box"></span>
+            <span class="acc-txt" id="accTxt">Acentos</span>
+          </label>
+        </div>
       </div>
-
-      <button class="btn ghost lb-link" onclick="openLeaderboard()">🏆 Ver ranking</button>
 
       <p class="hint" id="mpHint" style="display:none"></p>
     </section>
@@ -396,24 +463,44 @@
     <!-- SEARCHING / WAITING -->
     <section id="screen-wait" class="status hidden">
       <div class="spinner" id="waitSpinner"></div>
-      <h2 id="waitTitle">Procurando oponente…</h2>
+      <h2 id="waitTitle" data-i18n="wait_title_searching">Procurando oponente…</h2>
       <p class="sub" id="waitSub"></p>
       <div id="linkWrap" class="hidden">
         <div class="link-box">
           <input id="linkInput" class="link-field" readonly>
-          <button class="btn primary" id="copyBtn" onclick="copyLink()">Copiar link</button>
+          <button class="btn primary" id="copyBtn" onclick="copyLink()" data-i18n="copy_link_btn">Copiar link</button>
         </div>
       </div>
       <div class="btns" id="waitBtns">
-        <button class="btn ghost" onclick="cancelWait()">cancelar</button>
+        <button class="btn ghost" onclick="cancelWait()" data-i18n="cancel_btn">cancelar</button>
+      </div>
+    </section>
+
+    <!-- READY CHECK -->
+    <section id="screen-ready" class="status hidden">
+      <h2 data-i18n="ready_title">Prontos?</h2>
+      <div class="ready-wrap">
+        <div class="ready-row you" id="readyMeRow" onclick="onReadyToggle()">
+          <span class="ready-box"></span>
+          <span class="ready-name" id="readyMeName">Você</span>
+          <span class="ready-status" id="readyMeStatus" data-i18n="ready_you_hint">toque para confirmar</span>
+        </div>
+        <div class="ready-row opp" id="readyOppRow">
+          <span class="ready-box"></span>
+          <span class="ready-name" id="readyOppName">Oponente</span>
+          <span class="ready-status" id="readyOppStatus" data-i18n="ready_waiting">aguardando…</span>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn ghost" onclick="goHome()" data-i18n="cancel_btn">cancelar</button>
       </div>
     </section>
 
     <!-- LEADERBOARD -->
     <section id="screen-lb" class="status hidden">
-      <h2>🏆 Ranking — melhores PPM</h2>
+      <h2 data-i18n="lb_title">🏆 Ranking — melhores PPM</h2>
       <div id="lbList" class="lb-list"></div>
-      <button class="btn ghost" onclick="goHome()">voltar</button>
+      <button class="btn ghost" onclick="closeLeaderboard()" data-i18n="lb_back">voltar</button>
     </section>
 
     <!-- RACE -->
@@ -433,8 +520,8 @@
 
       <div class="solo-toggle hidden" id="soloToggle">
         <div class="seg">
-          <button class="seg-opt" data-mode="tempo" onclick="switchSoloMode('tempo')">Tempo</button>
-          <button class="seg-opt" data-mode="texto" onclick="switchSoloMode('texto')">Texto</button>
+          <button class="seg-opt" data-mode="tempo" onclick="switchSoloMode('tempo')" data-i18n="seg_time">Tempo</button>
+          <button class="seg-opt" data-mode="texto" onclick="switchSoloMode('texto')" data-i18n="seg_text">Texto</button>
         </div>
       </div>
 
@@ -446,19 +533,19 @@
         </div>
         <input id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text">
       </div>
-      <div class="tap-hint" id="tapHint">toque no texto para abrir o teclado ⌨</div>
+      <div class="tap-hint" id="tapHint" data-i18n="tap_hint">toque no texto para abrir o teclado ⌨</div>
 
       <div class="restat">
-        <span>tempo <b id="stTime">0.0s</b></span>
-        <span>precisão <b id="stAcc">100%</b></span>
+        <span><span data-i18n="time_label">tempo</span> <b id="stTime">0.0s</b></span>
+        <span><span data-i18n="accuracy_label">precisão</span> <b id="stAcc">100%</b></span>
       </div>
 
       <div class="restart-row hidden" id="restartRow">
         <button class="btn-restart" id="restartBtn" tabindex="0" onclick="restartSolo()">
-          <span class="kbd">tab</span> + <span class="kbd">enter</span> reiniciar
+          <span class="kbd">tab</span> + <span class="kbd">enter</span> <span data-i18n="restart_label">reiniciar</span>
         </button>
         <button class="btn-restart" id="escBackBtn" onclick="goHome()">
-          <span class="kbd">esc</span> voltar
+          <span class="kbd">esc</span> <span data-i18n="esc_back_label">voltar</span>
         </button>
       </div>
     </section>
@@ -468,40 +555,40 @@
       <div class="verdict" id="verdict">—</div>
       <div class="rgrid">
         <div class="rcell you">
-          <div class="rn" id="resYouName">Você</div>
-          <div class="hero"><span class="big" id="resYouWpm">0</span><span class="unit">ppm</span></div>
+          <div class="rn" id="resYouName" data-i18n="default_you_name">Você</div>
+          <div class="hero"><span class="big" id="resYouWpm">0</span><span class="unit" data-i18n="unit_word">ppm</span></div>
           <div class="acc" id="resYouAcc">100% · 0.0s</div>
         </div>
         <div class="rcell opp">
-          <div class="rn" id="resOppName">Oponente</div>
-          <div class="hero"><span class="big" id="resOppWpm">0</span><span class="unit">ppm</span></div>
+          <div class="rn" id="resOppName" data-i18n="default_opp_name">Oponente</div>
+          <div class="hero"><span class="big" id="resOppWpm">0</span><span class="unit" data-i18n="unit_word">ppm</span></div>
           <div class="acc" id="resOppAcc">—</div>
         </div>
       </div>
       <div class="btns">
-        <button class="btn primary" id="rematchBtn" onclick="rematch()">Jogar de novo</button>
-        <button class="btn" onclick="openLeaderboard()">🏆 Ranking</button>
-        <button class="btn ghost" onclick="goHome()">início</button>
+        <button class="btn primary" id="rematchBtn" onclick="rematch()" data-i18n="play_again_btn">Jogar de novo</button>
+        <button class="btn" onclick="openLeaderboard()" data-i18n="leaderboard_btn_small">🏆 Ranking</button>
+        <button class="btn ghost" onclick="goHome()" data-i18n="home_btn">início</button>
       </div>
     </section>
 
     <!-- RESULT (solo / tempo) -->
     <section id="screen-solo" class="result hidden">
-      <div class="verdict win" id="soloTitle">treino concluído</div>
+      <div class="verdict win" id="soloTitle" data-i18n="solo_practice_done">treino concluído</div>
       <div class="solo-res">
-        <div class="item hero"><span class="big" id="soloWpm">0</span><span class="lab">ppm</span></div>
-        <div class="item"><span class="big sm" id="soloAcc" style="color:var(--opp)">100%</span><span class="lab">precisão</span></div>
-        <div class="item"><span class="big sm" id="soloTime" style="color:var(--text)">0s</span><span class="lab" id="soloThirdLab">tempo</span></div>
+        <div class="item hero"><span class="big" id="soloWpm">0</span><span class="lab" data-i18n="unit_word">ppm</span></div>
+        <div class="item"><span class="big sm" id="soloAcc" style="color:var(--opp)">100%</span><span class="lab" data-i18n="accuracy_label">precisão</span></div>
+        <div class="item"><span class="big sm" id="soloTime" style="color:var(--text)">0s</span><span class="lab" id="soloThirdLab" data-i18n="time_label">tempo</span></div>
       </div>
       <div class="btns">
-        <button class="btn primary" id="soloAgainBtn" onclick="startSolo()">De novo</button>
-        <button class="btn" onclick="openLeaderboard()">🏆 Ranking</button>
-        <button class="btn ghost" onclick="goHome()">início</button>
+        <button class="btn primary" id="soloAgainBtn" onclick="startSolo()" data-i18n="solo_again_btn">De novo</button>
+        <button class="btn" onclick="openLeaderboard()" data-i18n="leaderboard_btn_small">🏆 Ranking</button>
+        <button class="btn ghost" onclick="goHome()" data-i18n="home_btn">início</button>
       </div>
     </section>
   </main>
 
-  <footer>
+  <footer data-i18n="footer_note">
     ppm = palavras por minuto (5 caracteres = 1 palavra), padrão universal de digitação.
   </footer>
 </div>
@@ -514,20 +601,202 @@
    ========================================================================= */
 
 /* ---------- palavras (solo/tempo geram localmente; no duelo o texto vem do servidor) ---------- */
-const WORDS = ("tempo pessoa ano forma mundo vida dia mão parte casa olho água homem coisa história terra trabalho momento noite país hora palavra fim mês lugar cabeça exemplo verdade número grupo problema luz nome ideia corpo cidade amigo escola livro filho pai mãe força ponto campo governo festa música cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte ciência natureza animal planta flor árvore rio mar montanha céu sol lua estrela chuva vento fogo calor frio manhã tarde semana futuro passado presente minuto segundo começo meio verão inverno sonho medo alegria amor paz saúde dinheiro preço valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar dançar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir começar terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar rápido devagar forte claro simples bonito").split(" ");
+const WORDS = ("tempo pessoa ano forma mundo vida dia mão parte casa olho água homem coisa história terra trabalho momento noite país hora palavra fim mês lugar cabeça exemplo verdade número grupo problema luz nome ideia corpo cidade amigo escola livro filho pai mãe força ponto campo governo festa música cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte ciência natureza animal planta flor árvore rio mar montanha céu sol lua estrela chuva vento fogo calor frio manhã tarde semana futuro passado presente minuto segundo começo meio verão inverno sonho medo alegria amor paz saúde dinheiro preço valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar dançar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir começar terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar rápido devagar forte claro simples bonito azul verde vermelho amarelo branco preto cinza rosa laranja roxo grande pequeno alto baixo largo estreito pesado leve novo velho bom mau feliz triste cansado fraco doce salgado quente livre certo errado justo fácil difícil caro barato limpo sujo irmão irmã avô avó tio tia primo sobrinho neto marido esposa namorado bebê criança jovem adulto idoso vizinho chefe cliente cama sofá armário espelho travesseiro cobertor toalha sabonete escova pente cozinha sala quarto banheiro jardim garagem varanda telhado parede chão teto escada pão leite ovo queijo carne peixe arroz feijão fruta legume açúcar sal óleo manteiga café chá suco cerveja vinho sapato camisa calça vestido casaco chapéu óculos relógio anel colar bolsa mochila avião trem ônibus bicicleta barco caminhão moto hospital igreja praça parque praia floresta deserto ilha ponte túnel estrada professor médico advogado engenheiro artista escritor músico ator cantor jornalista policial bombeiro cozinheiro motorista letra frase texto poema desenho pintura esporte futebol basquete natação segunda terça quarta quinta sexta sábado domingo janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro").split(" ");
+
+const WORDS_EN = ("time person year shape world life day hand part house eye water man thing history land work moment night country hour word end month place head example truth number group problem light name idea body city friend school book child father mother strength point field government party music color food street car door window table chair paper pen computer phone internet game movie theater art science nature animal plant flower tree river sea mountain sky sun moon star rain wind fire heat cold morning afternoon week future past present minute second start middle summer winter dream fear joy love peace health money price value account bank store market buy sell pay earn run walk talk hear think know want can make say live learn teach read write sing dance play study travel eat drink sleep wake smile like need try manage begin finish change stay return arrive leave enter climb descend open close take meet wait help care create build fix clean cook quick slow strong clear simple pretty blue green red yellow white black gray pink orange purple big small tall short wide narrow heavy new old good bad happy sad tired weak sweet salty hot free right wrong fair easy hard expensive cheap dirty brother sister grandfather grandmother uncle aunt cousin nephew grandson husband wife girlfriend baby kid teen adult elder neighbor boss customer bed sofa closet mirror pillow blanket towel soap brush comb kitchen room bathroom garden garage balcony roof wall floor ceiling stairs bread milk egg cheese meat fish rice beans fruit vegetable sugar salt oil butter coffee tea juice beer wine shoe shirt pants dress coat hat glasses watch ring necklace bag backpack plane train bus bicycle boat truck motorcycle hospital church square park beach forest desert island bridge tunnel road teacher doctor lawyer engineer artist writer musician actor singer journalist police firefighter driver letter sentence text poem drawing painting sport soccer basketball swimming monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december").split(" ");
+
+/* ---------- idioma / i18n ---------- */
+function detectLang(){
+  const saved = lsGet('duelel_lang');
+  if(saved==='pt' || saved==='en') return saved;
+  return (navigator.language||'').toLowerCase().startsWith('pt') ? 'pt' : 'en';
+}
+let LANG = detectLang();
+
+const I18N = {
+  pt:{
+    meta_title:'Duelel — corrida de digitação',
+    meta_desc:'Corrida de digitação em tempo real. Você contra o tempo ou contra outro jogador.',
+    name_label:'Nome', name_error:'digite um nome para jogar',
+    invite_text:'🏁 Você foi convidado para um duelo. Digite seu nome e entre na sala.',
+    invite_btn:'Entrar na sala →',
+    mode1_k:'1 · online', mode1_title:'Procurar partida',
+    mode1_desc:'Entra na fila e enfrenta o próximo oponente disponível na sua plataforma.',
+    mode2_k:'2 · privado', mode2_title:'Sala com amigo',
+    mode2_desc:'Gera um link pra você mandar e desafiar quem quiser diretamente.',
+    mode3_k:'3 · treino', mode3_title:'Treinar sozinho',
+    mode3_desc:'Pratique sem oponente. Você contra o tempo — ou contra um texto.',
+    seg_time:'Tempo', seg_text:'Texto', accents_label:'Acentos',
+    leaderboard_link:'🏆 Ranking',
+    ready_title:'Prontos?', ready_you_hint:'toque para confirmar',
+    ready_waiting:'aguardando…', ready_confirmed:'pronto ✓',
+    offline_msg:'Modo online indisponível: o servidor está fora do ar. Você pode jogar Sozinho e 30 segundos normalmente!',
+    wait_title_searching:'Procurando oponente…',
+    wait_sub_mobile:'Buscando outro jogador no celular. Peça pra alguém abrir o Duelel e tocar em "Procurar partida".',
+    wait_sub_desktop:'Buscando outro jogador no desktop{acc}.',
+    acc_with:' e que também joga com acentos', acc_without:' e que também joga sem acentos',
+    copy_link_btn:'Copiar link', copy_link_done:'Copiado ✓', cancel_btn:'cancelar',
+    lb_title:'🏆 Ranking — melhores PPM', lb_back:'voltar',
+    lb_keyboard:'⌨ Teclado', lb_mobile:'📱 Celular',
+    lb_empty:'Ninguém aqui ainda. Seja o primeiro! 🏁', lb_loading:'carregando…',
+    lb_offline:'Ranking indisponível: o servidor está fora do ar.',
+    room_creating_title:'Criando sala…', room_creating_sub:'Um instante.',
+    room_ready_title:'Sala pronta', room_ready_sub:'Envie o link abaixo. A corrida começa assim que a pessoa entrar.',
+    room_joining_title:'Entrando na sala…', room_joining_sub:'Conectando com o anfitrião.',
+    rematch_title:'Revanche', rematch_sub:'Aguardando o oponente aceitar…',
+    rematch_accept_btn:'Aceitar revanche 🔥', rematch_btn:'Revanche',
+    play_again_btn:'Jogar de novo', leaderboard_btn_small:'🏆 Ranking', home_btn:'Início',
+    tap_hint:'toque no texto para abrir o teclado ⌨',
+    time_label:'tempo', accuracy_label:'precisão',
+    restart_label:'reiniciar', esc_back_label:'voltar',
+    default_you_name:'Você', default_opp_name:'Oponente',
+    you_win:'Você venceu! 🏆', you_lose:'Você perdeu',
+    you_win_oppleft:'Você venceu — oponente saiu', opp_left_msg:'O oponente saiu da sala.',
+    conn_lost_msg:'Conexão perdida. Tente novamente.', generic_error:'Algo deu errado.',
+    err_room_not_found:'Sala não encontrada ou já encerrada.', err_room_full:'Essa sala já está cheia.',
+    solo_practice_done:'treino concluído', solo_timed_title:'30 segundos', words_label:'palavras',
+    solo_again_btn:'De novo', go_text:'Vai!',
+    footer_note:'ppm = palavras por minuto (5 caracteres = 1 palavra), padrão universal de digitação.',
+    unit_word:'ppm', mode_label_duelo:'duelo', mode_label_tempo:'30s', mode_label_treino:'treino'
+  },
+  en:{
+    meta_title:'Duelel — typing race',
+    meta_desc:'Real-time typing race. You against the clock or against another player.',
+    name_label:'Name', name_error:'enter a name to play',
+    invite_text:'🏁 You\'ve been invited to a duel. Enter your name and join the room.',
+    invite_btn:'Join the room →',
+    mode1_k:'1 · online', mode1_title:'Quick match',
+    mode1_desc:'Join the queue and face the next available opponent on your platform.',
+    mode2_k:'2 · private', mode2_title:'Play with a friend',
+    mode2_desc:'Generate a link to send and challenge anyone directly.',
+    mode3_k:'3 · practice', mode3_title:'Solo',
+    mode3_desc:'Practice without an opponent. You against the clock — or against a text.',
+    seg_time:'Time', seg_text:'Text', accents_label:'Accents',
+    leaderboard_link:'🏆 Leaderboard',
+    ready_title:'Ready?', ready_you_hint:'tap to confirm',
+    ready_waiting:'waiting…', ready_confirmed:'ready ✓',
+    offline_msg:'Online mode unavailable: the server is offline. You can still play Solo and 30 seconds normally!',
+    wait_title_searching:'Looking for an opponent…',
+    wait_sub_mobile:'Looking for another player on mobile. Ask someone to open Duelel and tap "Quick match".',
+    wait_sub_desktop:'Looking for another player on desktop{acc}.',
+    acc_with:'', acc_without:'',
+    copy_link_btn:'Copy link', copy_link_done:'Copied ✓', cancel_btn:'cancel',
+    lb_title:'🏆 Leaderboard — best WPM', lb_back:'back',
+    lb_keyboard:'⌨ Keyboard', lb_mobile:'📱 Mobile',
+    lb_empty:'No one here yet. Be the first! 🏁', lb_loading:'loading…',
+    lb_offline:'Leaderboard unavailable: the server is offline.',
+    room_creating_title:'Creating room…', room_creating_sub:'One moment.',
+    room_ready_title:'Room ready', room_ready_sub:'Send the link below. The race starts as soon as they join.',
+    room_joining_title:'Joining room…', room_joining_sub:'Connecting to the host.',
+    rematch_title:'Rematch', rematch_sub:'Waiting for opponent to accept…',
+    rematch_accept_btn:'Accept rematch 🔥', rematch_btn:'Rematch',
+    play_again_btn:'Play again', leaderboard_btn_small:'🏆 Leaderboard', home_btn:'Home',
+    tap_hint:'tap the text to open the keyboard ⌨',
+    time_label:'time', accuracy_label:'accuracy',
+    restart_label:'restart', esc_back_label:'back',
+    default_you_name:'You', default_opp_name:'Opponent',
+    you_win:'You won! 🏆', you_lose:'You lost',
+    you_win_oppleft:'You won — opponent left', opp_left_msg:'The opponent left the room.',
+    conn_lost_msg:'Connection lost. Try again.', generic_error:'Something went wrong.',
+    err_room_not_found:'Room not found or already closed.', err_room_full:'This room is already full.',
+    solo_practice_done:'practice complete', solo_timed_title:'30 seconds', words_label:'words',
+    solo_again_btn:'Again', go_text:'Go!',
+    footer_note:'wpm = words per minute (5 characters = 1 word), the universal typing standard.',
+    unit_word:'wpm', mode_label_duelo:'duel', mode_label_tempo:'30s', mode_label_treino:'practice'
+  }
+};
+function t(key){ return (I18N[LANG] && I18N[LANG][key]!=null) ? I18N[LANG][key] : ((I18N.pt[key])||key); }
+
+function applyLang(){
+  document.documentElement.lang = LANG==='pt' ? 'pt-BR' : 'en';
+  document.title = t('meta_title');
+  const md=document.querySelector('meta[name="description"]'); if(md) md.setAttribute('content', t('meta_desc'));
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(I18N.pt[k]!=null) el.textContent = t(k);
+  });
+  const sw=document.getElementById('langSwitch'); if(sw) sw.classList.toggle('is-en', LANG==='en');
+  updateAccentsVisibility();
+}
+function setLang(l){
+  if(l!=='pt' && l!=='en') return;
+  if(l===LANG) return;
+  LANG = l;
+  lsSet('duelel_lang', LANG);
+  applyLang();
+}
+// clique em qualquer parte do switch (trilho, bolinha) também alterna — os botões PT/EN continuam indo direto pro seu idioma
+// clique em qualquer parte do switch sempre alterna (mesmo clicando no lado já ativo);
+// também dá pra arrastar a bolinha de um lado pro outro.
+let langDrag=null;
+function langPointerDown(e){
+  const el=document.getElementById('langSwitch');
+  const rect=el.getBoundingClientRect();
+  langDrag={ startX:e.clientX, rectLeft:rect.left, rectW:rect.width, moved:false,
+             startFrac: LANG==='en' ? 1 : 0 };
+  el.classList.add('dragging');
+  try{ el.setPointerCapture(e.pointerId); }catch(err){}
+}
+function langPointerMove(e){
+  if(!langDrag) return;
+  const dx=e.clientX-langDrag.startX;
+  if(Math.abs(dx)>4) langDrag.moved=true;
+  const half=langDrag.rectW/2;
+  let frac=langDrag.startFrac + dx/half;
+  frac=Math.max(0, Math.min(1, frac));
+  langDrag.lastFrac=frac;
+  document.getElementById('langThumb').style.transform=`translateX(${frac*100}%)`;
+}
+function langPointerUp(e){
+  if(!langDrag) return;
+  const el=document.getElementById('langSwitch');
+  el.classList.remove('dragging');
+  document.getElementById('langThumb').style.transform='';
+  if(!langDrag.moved){
+    setLang(LANG==='pt' ? 'en' : 'pt');            // toque simples: sempre alterna
+  }else{
+    setLang(langDrag.lastFrac>0.5 ? 'en' : 'pt');   // soltou arrastando: decide pela posição
+  }
+  langDrag=null;
+}
+(function initLangDrag(){
+  const el=document.getElementById('langSwitch');
+  el.addEventListener('pointerdown', langPointerDown);
+  el.addEventListener('pointermove', langPointerMove);
+  el.addEventListener('pointerup', langPointerUp);
+  el.addEventListener('pointercancel', langPointerUp);
+})();
+function updateAccentsVisibility(){
+  const r=document.getElementById('optsRow');
+  if(!r) return;
+  if(LANG==='pt'){
+    const tx=document.getElementById('accTxt'); if(tx) tx.textContent=t('accents_label');
+  }
+  if(IS_MOBILE){
+    r.style.display='none';           // no celular nunca existe — não muda em runtime, sem risco de "pulo"
+    r.classList.remove('fx-off');
+  }else{
+    r.style.display='';
+    r.classList.toggle('fx-off', LANG==='en');   // fade rápido, mantendo o espaço reservado
+  }
+}
 
 function stripAccents(s){ return s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+// palavras que já são naturalmente sem acento (não é "mãe" virando "mae" — é só quem nunca teve acento)
+const WORDS_PT_NOACC = WORDS.filter(w => stripAccents(w) === w);
 function useAccents(){
+  if(LANG==='en') return false;                // inglês: sem conceito de acento
   if(IS_MOBILE) return false;                 // celular: sempre sem acento
   const el=document.getElementById('optAccents');
   return el ? el.checked : true;
 }
 function genWords(n){
+  let pool;
+  if(LANG==='en') pool = WORDS_EN;
+  else pool = useAccents() ? WORDS : WORDS_PT_NOACC;
   let out=[];
-  for(let i=0;i<n;i++) out.push(WORDS[Math.floor(Math.random()*WORDS.length)]);
-  let t = out.join(" ");
-  if(!useAccents()) t = stripAccents(t);
-  return t;
+  for(let i=0;i<n;i++) out.push(pool[Math.floor(Math.random()*pool.length)]);
+  return out.join(" ");
 }
 function genText(){ return genWords(26); }
 
@@ -549,20 +818,18 @@ let myName = lsGet('duelel_name') || '';
 (function initBadge(){
   document.getElementById('platText').textContent = IS_MOBILE ? '📱 mobile' : '⌨ desktop';
   document.getElementById('platBadge').querySelector('.dot').style.background = IS_MOBILE ? 'var(--opp)':'var(--you)';
-  if(IS_MOBILE){ const r=document.getElementById('optsRow'); if(r) r.style.display='none'; }
 })();
 
 /* ---------- WebSocket ---------- */
 const WS_URL = (location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws';
 let ws=null, wsOpen=false, outbox=[], everConnected=false, serverDown=false, connGuard=null;
-const OFFLINE_MSG='Modo online indisponível: o servidor está fora do ar. Você pode jogar Sozinho e 30 segundos normalmente!';
 
 function wsConnect(){
   if(ws && (ws.readyState===0 || ws.readyState===1)) return;
   try{ ws=new WebSocket(WS_URL); }catch(e){ return; }
   ws.onopen=()=>{
     wsOpen=true; everConnected=true; serverDown=false; clearTimeout(connGuard);
-    send('hello', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID});
+    send('hello', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID, lang:LANG});
     const q=outbox; outbox=[]; q.forEach(m=>{ try{ws.send(m);}catch(e){} });
   };
   ws.onmessage=(e)=>{ let m; try{ m=JSON.parse(e.data); }catch(_){ return; } onServer(m); };
@@ -576,13 +843,13 @@ function send(type, payload){
 }
 // checa se dá pra usar o online; se o servidor não responder em 6s, avisa e volta
 function onlineGuard(){
-  if(serverDown){ flashError(OFFLINE_MSG); return false; }
+  if(serverDown){ flashError(t('offline_msg')); return false; }
   wsConnect();
   clearTimeout(connGuard);
   connGuard=setTimeout(()=>{
     if(!wsOpen){
       serverDown=true;
-      if(!document.getElementById('screen-wait').classList.contains('hidden')){ show('home'); flashError(OFFLINE_MSG); }
+      if(!document.getElementById('screen-wait').classList.contains('hidden')){ show('home'); flashError(t('offline_msg')); }
     }
   }, 6000);
   return true;
@@ -594,7 +861,7 @@ function onDisconnect(){
   if(waiting || racing){
     clearTimeout(connGuard);
     goHome();
-    flashError(serverDown ? OFFLINE_MSG : 'Conexão perdida. Tente novamente.');
+    flashError(serverDown ? t('offline_msg') : t('conn_lost_msg'));
   }
 }
 function flashError(msg){
@@ -608,19 +875,24 @@ function onServer(m){
     case 'welcome':      break;
     case 'waiting':      break;                       // já mostramos a tela de espera
     case 'room_created': showRoomLink(m.code); break;
-    case 'match_found':  startMpRace(m); break;
+    case 'match_found':  onMatchFound(m); break;
+    case 'opp_ready':    updateOppReadyUI(m.ready); break;
+    case 'race_start':   startMpRace(m); break;
     case 'opp_progress': updateOpp(m); break;
     case 'race_over':    endMpRace(m); break;
     case 'opp_left':     endMpLeft(); break;
     case 'rematch_offer':onRematchOffer(); break;
     case 'leaderboard':  renderLb(m); break;
-    case 'error':        goHome(); flashError(m.msg||'Algo deu errado.'); break;
+    case 'error':        goHome(); flashError(m.code ? t('err_'+m.code) : (m.msg||t('generic_error'))); break;
   }
 }
 
 /* ---------- navegação de telas ---------- */
-const SCREENS=['home','wait','lb','race','result','solo'];
-function show(id){ SCREENS.forEach(s=>document.getElementById('screen-'+s).classList.toggle('hidden', s!==id)); }
+const SCREENS=['home','wait','lb','ready','race','result','solo'];
+function show(id){
+  SCREENS.forEach(s=>document.getElementById('screen-'+s).classList.toggle('hidden', s!==id));
+  const ls=document.getElementById('langSwitch'); if(ls) ls.style.display = (id==='home') ? '' : 'none';
+}
 
 let clockTimer=null, ctx=null, pendingRoom=null;
 
@@ -650,7 +922,12 @@ function goHome(){
   // se estava numa fila/sala/duelo, avisa o servidor
   if(ctx && (ctx.mp)) send('leave',{});
   else if(!document.getElementById('screen-wait').classList.contains('hidden')) send('leave',{});
+  exitFocusMode();
   show('home');
+}
+// restaura tudo que o modo foco escondeu (usado ao voltar sem terminar a corrida)
+function exitFocusMode(){
+  document.querySelectorAll('.fx-off').forEach(el=>{ if(el.id!=='optsRow') el.classList.remove('fx-off'); });
 }
 
 /* =========================================================================
@@ -661,14 +938,14 @@ function startQuick(){
   if(!onlineGuard()) return;
   show('wait');
   document.getElementById('waitSpinner').style.display='';
-  document.getElementById('waitTitle').textContent='Procurando oponente…';
+  document.getElementById('waitTitle').textContent=t('wait_title_searching');
   const acc = useAccents();
-  const accTxt = IS_MOBILE ? '' : (acc ? ' e que também joga com acentos' : ' e que também joga sem acentos');
+  const accTxt = (IS_MOBILE || LANG==='en') ? '' : (acc ? t('acc_with') : t('acc_without'));
   document.getElementById('waitSub').textContent = IS_MOBILE
-    ? 'Buscando outro jogador no celular. Peça pra alguém abrir o Duelel e tocar em "Partida rápida".'
-    : `Buscando outro jogador no desktop${accTxt}.`;
+    ? t('wait_sub_mobile')
+    : t('wait_sub_desktop').replace('{acc}', accTxt);
   document.getElementById('linkWrap').classList.add('hidden');
-  send('quick_join', {name:myName, platform:PLATFORM, accents:acc, playerId:PLAYER_ID});
+  send('quick_join', {name:myName, platform:PLATFORM, accents:acc, playerId:PLAYER_ID, lang:LANG});
 }
 function cancelWait(){ send('leave',{}); show('home'); }
 
@@ -678,18 +955,18 @@ function createRoom(){
   if(!onlineGuard()) return;
   show('wait');
   document.getElementById('waitSpinner').style.display='';
-  document.getElementById('waitTitle').textContent='Criando sala…';
-  document.getElementById('waitSub').textContent='Um instante.';
+  document.getElementById('waitTitle').textContent=t('room_creating_title');
+  document.getElementById('waitSub').textContent=t('room_creating_sub');
   document.getElementById('linkWrap').classList.add('hidden');
-  send('room_create', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID});
+  send('room_create', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID, lang:LANG});
 }
 function showRoomLink(code){
   ctx = ctx||{}; ctx.roomCode=code;
-  document.getElementById('waitTitle').textContent='Sala pronta';
-  document.getElementById('waitSub').textContent='Envie o link abaixo. A corrida começa assim que a pessoa entrar.';
+  document.getElementById('waitTitle').textContent=t('room_ready_title');
+  document.getElementById('waitSub').textContent=t('room_ready_sub');
   const li=document.getElementById('linkInput');
   li.value=roomLinkFor(code);
-  document.getElementById('copyBtn').textContent='Copiar link';
+  document.getElementById('copyBtn').textContent=t('copy_link_btn');
   document.getElementById('copyBtn').classList.remove('done');
   document.getElementById('linkWrap').classList.remove('hidden');
 }
@@ -700,29 +977,52 @@ function joinPending(){
   document.getElementById('inviteBanner').classList.add('hidden');
   show('wait');
   document.getElementById('waitSpinner').style.display='';
-  document.getElementById('waitTitle').textContent='Entrando na sala…';
-  document.getElementById('waitSub').textContent='Conectando com o anfitrião.';
+  document.getElementById('waitTitle').textContent=t('room_joining_title');
+  document.getElementById('waitSub').textContent=t('room_joining_sub');
   document.getElementById('linkWrap').classList.add('hidden');
-  send('room_join', {code:c, name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID});
+  send('room_join', {code:c, name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID, lang:LANG});
 }
 async function copyLink(){
   const li=document.getElementById('linkInput');
   try{ await navigator.clipboard.writeText(li.value); }
   catch(e){ li.select(); document.execCommand && document.execCommand('copy'); }
   const b=document.getElementById('copyBtn');
-  b.textContent='Copiado ✓'; b.classList.add('done');
-  setTimeout(()=>{ b.textContent='Copiar link'; b.classList.remove('done'); }, 1800);
+  b.textContent=t('copy_link_done'); b.classList.add('done');
+  setTimeout(()=>{ b.textContent=t('copy_link_btn'); b.classList.remove('done'); }, 1800);
 }
 
-function startMpRace(m){
-  const skew = (m.serverNow || Date.now()) - Date.now();   // corrige diferença de relógio
-  const startLocal = m.startAt - skew;
+function onMatchFound(m){
   ctx = {
     mp:true, solo:false, timed:false,
-    text:m.text, oppName:(m.opp&&m.opp.name)||'Oponente', oppPlat:(m.opp&&m.opp.platform)||'',
+    text:null, oppName:(m.opp&&m.opp.name)||t('default_opp_name'), oppPlat:(m.opp&&m.opp.platform)||'',
     fromRoom:!!m.room, roomCode:m.room||null,
     value:'', started:false, startTime:0, finished:false, finishTime:0, ended:false, lastSent:0
   };
+  iAmReady=false;
+  document.getElementById('readyMeName').textContent = myName;
+  document.getElementById('readyOppName').textContent = ctx.oppName;
+  document.getElementById('readyMeRow').classList.remove('checked');
+  document.getElementById('readyOppRow').classList.remove('checked');
+  document.getElementById('readyMeStatus').textContent = t('ready_you_hint');
+  document.getElementById('readyOppStatus').textContent = t('ready_waiting');
+  show('ready');
+}
+let iAmReady=false;
+function onReadyToggle(){
+  iAmReady = !iAmReady;
+  document.getElementById('readyMeRow').classList.toggle('checked', iAmReady);
+  document.getElementById('readyMeStatus').textContent = iAmReady ? t('ready_confirmed') : t('ready_you_hint');
+  send('ready', {ready:iAmReady});
+}
+function updateOppReadyUI(ready){
+  document.getElementById('readyOppRow').classList.toggle('checked', !!ready);
+  document.getElementById('readyOppStatus').textContent = ready ? t('ready_confirmed') : t('ready_waiting');
+}
+function startMpRace(m){
+  const skew = (m.serverNow || Date.now()) - Date.now();   // corrige diferença de relógio
+  const startLocal = m.startAt - skew;
+  ctx.text = m.text;
+  ctx.value=''; ctx.started=false; ctx.startTime=0; ctx.finished=false; ctx.finishTime=0; ctx.ended=false; ctx.lastSent=0;
   buildRace();
   runCountdown(startLocal);
 }
@@ -730,15 +1030,15 @@ function updateOpp(m){
   if(!ctx || !ctx.mp || ctx.ended) return;
   const total=ctx.text.length;
   document.getElementById('oppFill').style.width=Math.min(100,(m.idx/total*100))+'%';
-  document.getElementById('oppWpm').textContent=(m.wpm||0)+' ppm';
+  document.getElementById('oppWpm').textContent=(m.wpm||0)+' '+t('unit_word');
   positionCaret(document.getElementById('caretOpp'), m.idx||0);
 }
 function endMpRace(m){
   if(!ctx) return;
   ctx.ended=true; stopAll();
   const verdict=document.getElementById('verdict');
-  if(m.youWon){ verdict.textContent='Você venceu! 🏆'; verdict.className='verdict win'; }
-  else { verdict.textContent='Você perdeu'; verdict.className='verdict lose'; }
+  if(m.youWon){ verdict.textContent=t('you_win'); verdict.className='verdict win'; }
+  else { verdict.textContent=t('you_lose'); verdict.className='verdict lose'; }
   fillResult(m.you, m.opp);
 }
 function endMpLeft(){
@@ -751,12 +1051,12 @@ function endMpLeft(){
     const el = ctx.finished?ctx.finishTime:(Date.now()-ctx.startTime);
     const you={ name:myName, wpm:currentWpm(el,correct), acc, finishTime:(ctx.finished?ctx.finishTime:null) };
     const verdict=document.getElementById('verdict');
-    verdict.textContent='Você venceu — oponente saiu'; verdict.className='verdict win';
-    fillResult(you, { name:(ctx&&ctx.oppName)||'Oponente', wpm:0, acc:null, finishTime:null });
+    verdict.textContent=t('you_win_oppleft'); verdict.className='verdict win';
+    fillResult(you, { name:(ctx&&ctx.oppName)||t('default_opp_name'), wpm:0, acc:null, finishTime:null });
   }else{
     // saiu fora da corrida (ex.: enquanto esperava revanche) → não dá pra continuar
     goHome();
-    flashError('O oponente saiu da sala.');
+    flashError(t('opp_left_msg'));
   }
 }
 function fillResult(you, opp){
@@ -764,14 +1064,15 @@ function fillResult(you, opp){
   document.getElementById('resYouWpm').textContent=you.wpm||0;
   document.getElementById('resYouAcc').textContent=
     (you.acc!=null?you.acc:100)+'%'+(you.finishTime?` · ${(you.finishTime/1000).toFixed(1)}s`:'');
-  document.getElementById('resOppName').textContent=opp.name||'Oponente';
+  document.getElementById('resOppName').textContent=opp.name||t('default_opp_name');
   document.getElementById('resOppWpm').textContent=opp.wpm||0;
   document.getElementById('resOppAcc').textContent=
     (opp.acc!=null?opp.acc+'%':'—')+(opp.finishTime?` · ${(opp.finishTime/1000).toFixed(1)}s`:'');
   // botão principal: revanche com o mesmo amigo (sala) ou nova fila (partida rápida)
   const rb=document.getElementById('rematchBtn');
-  rb.textContent = ctx.fromRoom ? 'Revanche' : 'Jogar de novo';
+  rb.textContent = ctx.fromRoom ? t('rematch_btn') : t('play_again_btn');
   rb.classList.remove('pulse');
+  exitFocusMode();
   show('result');
 }
 function rematch(){
@@ -779,8 +1080,8 @@ function rematch(){
     if(!onlineGuard()) return;
     show('wait');
     document.getElementById('waitSpinner').style.display='';
-    document.getElementById('waitTitle').textContent='Revanche';
-    document.getElementById('waitSub').textContent='Aguardando o oponente aceitar…';
+    document.getElementById('waitTitle').textContent=t('rematch_title');
+    document.getElementById('waitSub').textContent=t('rematch_sub');
     document.getElementById('linkWrap').classList.add('hidden');
     send('rematch',{});
   }else{
@@ -791,7 +1092,7 @@ function rematch(){
 function onRematchOffer(){
   if(document.getElementById('screen-result').classList.contains('hidden')) return;
   const rb=document.getElementById('rematchBtn');
-  rb.textContent='Aceitar revanche 🔥';
+  rb.textContent=t('rematch_accept_btn');
   rb.classList.add('pulse');
 }
 
@@ -835,6 +1136,8 @@ function restartSolo(){
    ========================================================================= */
 function buildRace(){
   show('race');
+  ctx.focusApplied=false;
+  exitFocusMode();
   const passage=document.getElementById('passage');
   passage.innerHTML='';
   ctx.spans=[];
@@ -846,7 +1149,7 @@ function buildRace(){
   }
   document.getElementById('youName').textContent = myName;
   document.getElementById('youFill').style.width='0%';
-  document.getElementById('youWpm').textContent='0 ppm';
+  document.getElementById('youWpm').textContent='0 '+t('unit_word');
   document.getElementById('stAcc').textContent='100%';
   document.getElementById('stTime').textContent='0.0s';
 
@@ -861,7 +1164,7 @@ function buildRace(){
     oppRow.classList.remove('hidden'); caretOpp.classList.remove('hidden');
     document.getElementById('oppName').textContent = ctx.oppName + (ctx.oppPlat==='mobile'?' 📱':ctx.oppPlat==='desktop'?' ⌨':'');
     document.getElementById('oppFill').style.width='0%';
-    document.getElementById('oppWpm').textContent='0 ppm';
+    document.getElementById('oppWpm').textContent='0 '+t('unit_word');
     document.getElementById('caretOppLbl').textContent=ctx.oppName;
   }
 
@@ -872,7 +1175,7 @@ function buildRace(){
   scr.style.transform='translateY(0)';
   ctx.lineH = parseFloat(getComputedStyle(passage).lineHeight) || 40;
   const _fs = parseFloat(getComputedStyle(passage).fontSize) || 24;
-  const _caretH = Math.round(_fs * 0.74);                       // altura ~ das maiúsculas
+  const _caretH = Math.round(_fs * 0.95);                       // altura do traço (relativa à fonte)
   const RISE = 0.20;   // ↑ aumente pra SUBIR o traço, diminua pra descer
   ctx.caretDy = Math.round((ctx.lineH - _caretH)/2 - _fs*RISE);
   document.getElementById('caretYou').style.height = _caretH + 'px';
@@ -910,7 +1213,7 @@ function runCountdown(startAt){
   (function tick(){
     const left = startAt - Date.now();
     if(left<=0){
-      num.textContent='Vai!'; num.classList.add('go');
+      num.textContent=t('go_text'); num.classList.add('go');
       setTimeout(()=>{ ov.classList.add('hidden'); num.classList.remove('go'); beginRace(); }, 420);
       return;
     }
@@ -920,13 +1223,22 @@ function runCountdown(startAt){
   })();
 }
 
+// assim que o jogo começa, esconde tudo em volta do texto — só logo/título e tempo/precisão ficam
+function enterFocusMode(){
+  const ids=['tapHint','restartRow','platBadge'];
+  document.querySelector('.bars').classList.add('fx-off');
+  document.getElementById('soloToggle').classList.add('fx-off');
+  ids.forEach(id=>document.getElementById(id).classList.add('fx-off'));
+  const ft=document.querySelector('footer'); if(ft) ft.classList.add('fx-off');
+}
+
 function beginRace(){
   ctx.started=true;
   const inp=document.getElementById('hidden-input');
   inp.focus();
   if(ctx.timed && ctx.waitingFirstKey){
     document.getElementById('stTime').textContent = Math.round(ctx.duration/1000)+'s';
-    document.getElementById('youWpm').textContent = '0 ppm';
+    document.getElementById('youWpm').textContent = '0 '+t('unit_word');
     return;
   }
   ctx.startTime=Date.now();
@@ -937,6 +1249,7 @@ function beginRace(){
 
 function onType(e){
   if(!ctx.started || ctx.ended) return;
+  if(!ctx.focusApplied){ ctx.focusApplied=true; enterFocusMode(); }
   if(ctx.timed && ctx.waitingFirstKey){
     ctx.waitingFirstKey=false; ctx.startTime=Date.now(); ctx.deadline=ctx.startTime+ctx.duration;
     clockTimer=setInterval(updateClock, 100);
@@ -945,17 +1258,18 @@ function onType(e){
   const raw = e.target.value;
 
   // acurácia real: conta cada tecla nova, inclusive as erradas (que serão bloqueadas)
+  // comparação ignora maiúsculas/minúsculas — funciona igual com Caps Lock ligado
   if(raw.length>prev.length){
     for(let i=prev.length;i<raw.length;i++){
       ctx.keys=(ctx.keys||0)+1;
-      if(i>=ctx.text.length || raw[i]!==ctx.text[i]) ctx.errs=(ctx.errs||0)+1;
+      if(i>=ctx.text.length || raw[i].toLowerCase()!==ctx.text[i].toLowerCase()) ctx.errs=(ctx.errs||0)+1;
     }
   }
 
   // BLOQUEIO: aceita só o prefixo correto — letra errada não passa (o traço não avança)
   let cp=0;
-  while(cp<raw.length && cp<ctx.text.length && raw[cp]===ctx.text[cp]) cp++;
-  const v = raw.slice(0, cp);
+  while(cp<raw.length && cp<ctx.text.length && raw[cp].toLowerCase()===ctx.text[cp].toLowerCase()) cp++;
+  const v = ctx.text.slice(0, cp);   // guarda sempre a grafia canônica do texto-alvo
   if(v.length !== raw.length){ e.target.value=v; flashReject(); }
 
   ctx.value=v; paint();
@@ -1023,7 +1337,7 @@ function updateClock(){
   }
   const {correct,acc}=stats();
   document.getElementById('stAcc').textContent=acc+'%';
-  document.getElementById('youWpm').textContent = currentWpm(el, correct)+' ppm';
+  document.getElementById('youWpm').textContent = currentWpm(el, correct)+' '+t('unit_word');
 }
 
 function finishMine(){
@@ -1049,47 +1363,63 @@ function finalizeSolo(elapsedMs){
   document.getElementById('soloWpm').textContent=wpm;
   document.getElementById('soloAcc').textContent=acc+'%';
   if(ctx.timed){
-    document.getElementById('soloTitle').textContent='30 segundos';
-    document.getElementById('soloThirdLab').textContent='palavras';
+    document.getElementById('soloTitle').textContent=t('solo_timed_title');
+    document.getElementById('soloThirdLab').textContent=t('words_label');
     document.getElementById('soloTime').textContent=Math.round(correct/5);
     document.getElementById('soloAgainBtn').onclick=startTimed;
     submitScore(wpm,'tempo');
   }else{
-    document.getElementById('soloTitle').textContent='treino concluído';
-    document.getElementById('soloThirdLab').textContent='tempo';
+    document.getElementById('soloTitle').textContent=t('solo_practice_done');
+    document.getElementById('soloThirdLab').textContent=t('time_label');
     document.getElementById('soloTime').textContent=(elapsedMs/1000).toFixed(1)+'s';
     document.getElementById('soloAgainBtn').onclick=startSolo;
     submitScore(wpm,'treino');
   }
+  exitFocusMode();
   show('solo');
 }
 
 /* =========================================================================
    RANKING
    ========================================================================= */
-const MODE_LABEL = {duelo:'duelo', tempo:'30s', treino:'treino'};
+function modeLabel(mode){
+  if(mode==='duelo') return t('mode_label_duelo');
+  if(mode==='tempo') return t('mode_label_tempo');
+  if(mode==='treino') return t('mode_label_treino');
+  return mode||'';
+}
 function submitScore(wpm, mode){
   if(!wpm || wpm<=0) return;
   send('score_submit', {wpm, mode, name:myName, playerId:PLAYER_ID, platform:PLATFORM});
 }
+let lbReturn='home';
+function currentScreen(){
+  for(const s of SCREENS){ if(!document.getElementById('screen-'+s).classList.contains('hidden')) return s; }
+  return 'home';
+}
 function openLeaderboard(){
+  lbReturn=currentScreen();
   stopAll();
   show('lb');
   const list=document.getElementById('lbList');
-  if(serverDown){ list.innerHTML='<div class="lb-empty">Ranking indisponível: o servidor está fora do ar.</div>'; return; }
-  list.innerHTML='<div class="lb-empty">carregando…</div>';
+  if(serverDown){ list.innerHTML=`<div class="lb-empty">${t('lb_offline')}</div>`; return; }
+  list.innerHTML=`<div class="lb-empty">${t('lb_loading')}</div>`;
   wsConnect();
   send('leaderboard_get',{});
   setTimeout(()=>{
-    if(list.querySelector('.lb-empty') && list.textContent.indexOf('carregando')>=0)
-      list.innerHTML='<div class="lb-empty">Ranking indisponível: o servidor está fora do ar.</div>';
+    if(list.querySelector('.lb-empty') && list.textContent.indexOf(t('lb_loading'))>=0)
+      list.innerHTML=`<div class="lb-empty">${t('lb_offline')}</div>`;
   }, 6000);
+}
+function closeLeaderboard(){
+  if(lbReturn==='home') goHome();
+  else show(lbReturn);
 }
 function renderLb(data){
   const list=document.getElementById('lbList');
   list.innerHTML='';
-  list.appendChild(lbTable('⌨ Teclado', (data && data.desktop) || []));
-  list.appendChild(lbTable('📱 Celular', (data && data.mobile) || []));
+  list.appendChild(lbTable(t('lb_keyboard'), (data && data.desktop) || []));
+  list.appendChild(lbTable(t('lb_mobile'), (data && data.mobile) || []));
 }
 function lbTable(title, rows){
   const wrap=document.createElement('div');
@@ -1099,7 +1429,7 @@ function lbTable(title, rows){
   wrap.appendChild(h);
   if(!rows.length){
     const e=document.createElement('div');
-    e.className='lb-empty'; e.textContent='Ninguém aqui ainda. Seja o primeiro! 🏁';
+    e.className='lb-empty'; e.textContent=t('lb_empty');
     wrap.appendChild(e);
     return wrap;
   }
@@ -1109,8 +1439,8 @@ function lbTable(title, rows){
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
     row.innerHTML=`<span class="lb-rank">${medal}</span>`+
                   `<span class="lb-name">${escapeHtml(r.name||'—')}</span>`+
-                  `<span class="lb-mode">${MODE_LABEL[r.mode]||r.mode||''}</span>`+
-                  `<span class="lb-ppm">${r.wpm} ppm</span>`;
+                  `<span class="lb-mode">${modeLabel(r.mode)}</span>`+
+                  `<span class="lb-ppm">${r.wpm} ${t('unit_word')}</span>`;
     wrap.appendChild(row);
   });
   return wrap;
@@ -1134,11 +1464,24 @@ document.addEventListener('keydown',(e)=>{
   if(e.key==='Escape'){
     const raceVisible=!document.getElementById('screen-race').classList.contains('hidden');
     const onlineRacing = raceVisible && ctx && ctx.mp && !ctx.ended;
-    if(!onlineRacing) goHome();
+    if(onlineRacing) { /* não sai no meio do duelo */ }
+    else if(currentScreen()==='lb') closeLeaderboard();
+    else goHome();
   }
   if(e.key==='Tab'){
     const raceVisible=!document.getElementById('screen-race').classList.contains('hidden');
     if(raceVisible && ctx && ctx.solo && !ctx.ended){ e.preventDefault(); document.getElementById('restartBtn').focus(); }
+  }
+  if(e.key==='1' || e.key==='2' || e.key==='3'){
+    const homeVisible = !document.getElementById('screen-home').classList.contains('hidden');
+    const ae = document.activeElement;
+    const typingInField = ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA');
+    if(homeVisible && !typingInField){
+      e.preventDefault();   // evita que o dígito seja "digitado" no campo da corrida que acabou de ganhar foco
+      if(e.key==='1') startQuick();
+      else if(e.key==='2') createRoom();
+      else if(e.key==='3') startSoloSelected();
+    }
   }
 });
 
@@ -1148,6 +1491,7 @@ document.getElementById('nick').addEventListener('keydown',(e)=>{
 
 /* init */
 (function init(){
+  applyLang();
   const nick=document.getElementById('nick');
   if(myName) nick.value=myName;
   updateSegUI();

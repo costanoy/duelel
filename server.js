@@ -89,15 +89,20 @@ function topScores(n = 15) {
 }
 
 /* ---------------------------------------------------------------- palavras */
-const WORDS = ("tempo pessoa ano forma mundo vida dia mão parte casa olho água homem coisa história terra trabalho momento noite país hora palavra fim mês lugar cabeça exemplo verdade número grupo problema luz nome ideia corpo cidade amigo escola livro filho pai mãe força ponto campo governo festa música cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte ciência natureza animal planta flor árvore rio mar montanha céu sol lua estrela chuva vento fogo calor frio manhã tarde semana futuro passado presente minuto segundo começo meio verão inverno sonho medo alegria amor paz saúde dinheiro preço valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar dançar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir começar terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar rápido devagar forte claro simples bonito").split(" ");
+const WORDS = ("tempo pessoa ano forma mundo vida dia mão parte casa olho água homem coisa história terra trabalho momento noite país hora palavra fim mês lugar cabeça exemplo verdade número grupo problema luz nome ideia corpo cidade amigo escola livro filho pai mãe força ponto campo governo festa música cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte ciência natureza animal planta flor árvore rio mar montanha céu sol lua estrela chuva vento fogo calor frio manhã tarde semana futuro passado presente minuto segundo começo meio verão inverno sonho medo alegria amor paz saúde dinheiro preço valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar dançar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir começar terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar rápido devagar forte claro simples bonito azul verde vermelho amarelo branco preto cinza rosa laranja roxo grande pequeno alto baixo largo estreito pesado leve novo velho bom mau feliz triste cansado fraco doce salgado quente livre certo errado justo fácil difícil caro barato limpo sujo irmão irmã avô avó tio tia primo sobrinho neto marido esposa namorado bebê criança jovem adulto idoso vizinho chefe cliente cama sofá armário espelho travesseiro cobertor toalha sabonete escova pente cozinha sala quarto banheiro jardim garagem varanda telhado parede chão teto escada pão leite ovo queijo carne peixe arroz feijão fruta legume açúcar sal óleo manteiga café chá suco cerveja vinho sapato camisa calça vestido casaco chapéu óculos relógio anel colar bolsa mochila avião trem ônibus bicicleta barco caminhão moto hospital igreja praça parque praia floresta deserto ilha ponte túnel estrada professor médico advogado engenheiro artista escritor músico ator cantor jornalista policial bombeiro cozinheiro motorista letra frase texto poema desenho pintura esporte futebol basquete natação segunda terça quarta quinta sexta sábado domingo janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro").split(" ");
+
+const WORDS_EN = ("time person year shape world life day hand part house eye water man thing history land work moment night country hour word end month place head example truth number group problem light name idea body city friend school book child father mother strength point field government party music color food street car door window table chair paper pen computer phone internet game movie theater art science nature animal plant flower tree river sea mountain sky sun moon star rain wind fire heat cold morning afternoon week future past present minute second start middle summer winter dream fear joy love peace health money price value account bank store market buy sell pay earn run walk talk hear think know want can make say live learn teach read write sing dance play study travel eat drink sleep wake smile like need try manage begin finish change stay return arrive leave enter climb descend open close take meet wait help care create build fix clean cook quick slow strong clear simple pretty blue green red yellow white black gray pink orange purple big small tall short wide narrow heavy new old good bad happy sad tired weak sweet salty hot free right wrong fair easy hard expensive cheap dirty brother sister grandfather grandmother uncle aunt cousin nephew grandson husband wife girlfriend baby kid teen adult elder neighbor boss customer bed sofa closet mirror pillow blanket towel soap brush comb kitchen room bathroom garden garage balcony roof wall floor ceiling stairs bread milk egg cheese meat fish rice beans fruit vegetable sugar salt oil butter coffee tea juice beer wine shoe shirt pants dress coat hat glasses watch ring necklace bag backpack plane train bus bicycle boat truck motorcycle hospital church square park beach forest desert island bridge tunnel road teacher doctor lawyer engineer artist writer musician actor singer journalist police firefighter driver letter sentence text poem drawing painting sport soccer basketball swimming monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december").split(" ");
 
 function stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-function genWords(n, accents) {
+// palavras que já são naturalmente sem acento (não gera "mae"/"arvore" a partir de "mãe"/"árvore")
+const WORDS_PT_NOACC = WORDS.filter((w) => stripAccents(w) === w);
+function genWords(n, accents, lang) {
+  let pool;
+  if (lang === 'en') pool = WORDS_EN;
+  else pool = accents ? WORDS : WORDS_PT_NOACC;
   const out = [];
-  for (let i = 0; i < n; i++) out.push(WORDS[(Math.random() * WORDS.length) | 0]);
-  let t = out.join(' ');
-  if (!accents) t = stripAccents(t);
-  return t;
+  for (let i = 0; i < n; i++) out.push(pool[(Math.random() * pool.length) | 0]);
+  return out.join(' ');
 }
 
 /* ---------------------------------------------------------------- HTTP */
@@ -141,12 +146,12 @@ const roomCode = () => Array.from({ length: 5 }, () =>
 function send(ws, type, payload) {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify(Object.assign({ type }, payload || {})));
 }
-function bucketOf(c) { return `${c.platform}|${c.accents ? 'a' : 'na'}`; }
+function bucketOf(c) { return `${c.platform}|${c.accents ? 'a' : 'na'}|${c.lang || 'pt'}`; }
 
 wss.on('connection', (ws) => {
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
-  ws.c = { id: rid(), playerId: null, name: '—', platform: 'desktop', accents: true,
+  ws.c = { id: rid(), playerId: null, name: '—', platform: 'desktop', accents: true, lang: 'pt',
            state: 'idle', race: null, opp: null, roomCode: null, bucket: null,
            lastWpm: 0, lastAcc: 100 };
   send(ws, 'welcome', { id: ws.c.id });
@@ -163,6 +168,7 @@ function applyProfile(c, m) {
   if (typeof m.name === 'string') c.name = m.name.slice(0, 14) || '—';
   if (m.platform === 'mobile' || m.platform === 'desktop') c.platform = m.platform;
   if (typeof m.accents === 'boolean') c.accents = m.accents;
+  if (m.lang === 'pt' || m.lang === 'en') c.lang = m.lang;
   if (typeof m.playerId === 'string') c.playerId = m.playerId.slice(0, 64);
 }
 
@@ -178,7 +184,7 @@ function handle(ws, m) {
       leaveQueue(ws);
       const bucket = bucketOf(c);
       const q = queues.get(bucket) || [];
-      // procura um oponente compatível já esperando
+      // procura um oponente compatível já esperando (mesma plataforma, acentos E idioma)
       let opp = null;
       while (q.length) {
         const cand = q.shift();
@@ -186,7 +192,7 @@ function handle(ws, m) {
       }
       if (opp) {
         queues.set(bucket, q);
-        startRace(opp, ws, c.accents, null);
+        startRace(opp, ws, c.accents, null, c.lang);
       } else {
         q.push(ws); queues.set(bucket, q);
         c.state = 'queue'; c.bucket = bucket;
@@ -212,10 +218,28 @@ function handle(ws, m) {
       applyProfile(c, m);
       const code = String(m.code || '').toUpperCase().slice(0, 5);
       const r = rooms.get(code);
-      if (!r) { send(ws, 'error', { msg: 'Sala não encontrada ou já encerrada.' }); break; }
-      if (r.guest || r.host === ws) { send(ws, 'error', { msg: 'Essa sala já está cheia.' }); break; }
+      if (!r) { send(ws, 'error', { code: 'room_not_found' }); break; }
+      if (r.guest || r.host === ws) { send(ws, 'error', { code: 'room_full' }); break; }
       r.guest = ws; c.roomCode = code;
-      startRace(r.host, ws, r.host.c.accents, code);
+      // sala é convite direto entre amigos: o texto sai no idioma de quem criou a sala
+      startRace(r.host, ws, r.host.c.accents, code, r.host.c.lang);
+      break;
+    }
+
+    case 'ready': {
+      const race = c.race;
+      if (!race || race.startAt) break;   // sem corrida pendente, ou já começou
+      if (ws === race.a) race.readyA = !!m.ready;
+      else if (ws === race.b) race.readyB = !!m.ready;
+      const opp = c.opp;
+      if (opp) send(opp, 'opp_ready', { ready: !!m.ready });
+      if (race.readyA && race.readyB) {
+        race.a.c.state = 'racing'; race.b.c.state = 'racing';
+        race.startAt = Date.now() + 3200;
+        const now = Date.now();
+        send(race.a, 'race_start', { text: race.text, startAt: race.startAt, serverNow: now });
+        send(race.b, 'race_start', { text: race.text, startAt: race.startAt, serverNow: now });
+      }
       break;
     }
 
@@ -264,7 +288,7 @@ function handle(ws, m) {
         const code = c.rematchCode || other.c.rematchCode || null;
         c.rematchWith = null; other.c.rematchWith = null;
         c.rematchWant = false; other.c.rematchWant = false;
-        startRace(other, ws, c.accents, code);
+        startRace(other, ws, c.accents, code, c.lang);
       } else {
         send(ws, 'waiting', { mode: 'rematch' });
         send(other, 'rematch_offer', {});
@@ -298,20 +322,18 @@ function closeRoom(code, ws) {
   ws.c.roomCode = null;
 }
 
-function startRace(a, b, accents, code) {
+function startRace(a, b, accents, code, lang) {
   const race = {
-    id: rid(), a, b, text: genWords(28, accents),
-    startAt: Date.now() + 3500, fin: new Map(), over: false, graceTimer: null, code
+    id: rid(), a, b, text: genWords(28, accents, lang),
+    startAt: null, fin: new Map(), over: false, graceTimer: null, code,
+    readyA: false, readyB: false
   };
   for (const [x, y] of [[a, b], [b, a]]) {
-    x.c.state = 'racing'; x.c.race = race; x.c.opp = y;
+    x.c.state = 'ready'; x.c.race = race; x.c.opp = y;
     x.c.roomCode = code || null; x.c.bucket = null;
   }
-  const now = Date.now();
-  send(a, 'match_found', { text: race.text, startAt: race.startAt, serverNow: now, room: code,
-    opp: { name: b.c.name, platform: b.c.platform } });
-  send(b, 'match_found', { text: race.text, startAt: race.startAt, serverNow: now, room: code,
-    opp: { name: a.c.name, platform: a.c.platform } });
+  send(a, 'match_found', { room: code, opp: { name: b.c.name, platform: b.c.platform } });
+  send(b, 'match_found', { room: code, opp: { name: a.c.name, platform: a.c.platform } });
 }
 
 function decide(race) {
