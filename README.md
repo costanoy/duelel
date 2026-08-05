@@ -1,12 +1,12 @@
 # Duelel
 
-Corrida de digitação em tempo real. A ideia é simples: MonkeyType, mas competindo direto contra outra pessoa — dois cursores no mesmo texto, quem termina primeiro (e sem errar) ganha.
+Corrida de digitação em tempo real. A ideia é simples: um jogo de digitação, mas competindo direto contra outra pessoa.
 
 **No ar:** https://duelel.cyberhat.com.br
 
-Comecei isso como projeto de portfólio pra treinar full-stack de verdade — front, back, WebSocket, banco, deploy, PWA, até empacotamento pra loja. Foi crescendo mais do que eu esperava.
+Esse projeto nasceu em outubro de 2021, como o meu primeiro jogo para Web. Desses anos para cá, com tudo o que aprendi trabalhando como dev, decidi refazer o jogo do zero, colocando o meu conhecimento em prática e melhorando tudo o que era antes um site simples com um jogo de digitação.
 
-## O que dá pra fazer
+## O que dá pra fazer no jogo
 
 - Duelo online contra outra pessoa, via partida rápida (matchmaking automático) ou sala privada por link
 - Treino sozinho, em dois formatos: um texto fixo pra terminar, ou 30 segundos correndo contra o relógio
