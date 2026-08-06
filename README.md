@@ -1,72 +1,53 @@
 # Duelel
 
-Corrida de digitação em tempo real. A ideia é simples: MonkeyType, mas competindo direto contra outra pessoa — dois cursores no mesmo texto, quem termina primeiro (e sem errar) ganha.
+Real-time typing race. Simple idea: a typing game, but racing directly against another person.
 
-**No ar:** https://duelel.cyberhat.com.br
+**Live at:** https://duelel.cyberhat.com.br
 
-Comecei isso como projeto de portfólio pra treinar full-stack de verdade — front, back, WebSocket, banco, deploy, PWA, até empacotamento pra loja. Foi crescendo mais do que eu esperava.
+This project started back in October 2021, as my first web game. Since then, with everything I've learned working as a dev, I decided to rebuild it from scratch — putting that knowledge into practice and improving on what used to be a simple site with a typing game.
 
-## O que dá pra fazer
+## What you can do
 
-- Duelo online contra outra pessoa, via partida rápida (matchmaking automático) ou sala privada por link
-- Treino sozinho, em dois formatos: um texto fixo pra terminar, ou 30 segundos correndo contra o relógio
-- Ranking com melhores PPM, separado por plataforma
-- Interface em PT-BR e EN, com detecção automática pelo idioma do navegador
-- Instalável como PWA (funciona offline nos modos solo/tempo) e empacotado pra Google Play
+- Online duel against another person, either through quick match (automatic matchmaking) or a private room via link
+- Solo practice, in two formats: a fixed text to finish, or 30 seconds racing against the clock
+- Leaderboard with best WPM, split by platform
+- Interface in PT-BR and EN, auto-detected from the browser's language
+- Installable as a PWA (works offline in the solo/timed modes) and packaged for Google Play (still in closed testing before release)
 
 ## Stack
 
-**Front-end:** HTML/CSS/JS puro, sem framework — um `index.html` só. Foi proposital: queria ver até onde dava pra levar sem React/Vue, e no fim ajudou a manter o app leve e rápido de carregar.
+**Front-end:** plain HTML/CSS/JS. Wanted to see how far I could take it without React/Vue, and it ended up keeping the app light and fast to load.
 
-**Back-end:** Node.js com o módulo `http` nativo servindo os arquivos estáticos, `ws` cuidando do WebSocket (matchmaking, salas, sincronização da corrida em tempo real) e `better-sqlite3` guardando o ranking. Sem Express, sem framework de backend — só o necessário.
+**Back-end:** Node.js with the native `http` module serving static files, `ws` handling the WebSocket side (matchmaking, rooms, real-time race sync), and `better-sqlite3` storing the leaderboard.
 
-**Deploy:** Railway, com deploy automático a cada push no GitHub. Domínio próprio, DNS na Hostinger apontando via CNAME.
+**Deploy:** Railway, auto-deploying on every push to GitHub.
 
-## Como funciona o multiplayer, por cima
+## How the multiplayer works
 
-Cada partida passa por três fases: fila → tela de "prontos?" → corrida.
+- When you join the queue, the server groups you with compatible players (same platform, same accent preference on the Portuguese version, same language).
+- The countdown only starts once both players confirm ready — the server then rolls the start time and sends the text to both at once. Every keystroke gets relayed to the opponent over WebSocket, and the server itself decides the winner (by completion time), so the client can't lie about the result.
 
-1. Ao entrar na fila, o servidor te agrupa com jogadores compatíveis (mesma plataforma, mesma preferência de acento, mesmo idioma — celular não compete com teclado físico, e PT não cai contra EN).
-2. Quando acha um par, cria a corrida mas **não** começa o cronômetro ainda — os dois precisam confirmar que estão prontos primeiro.
-3. Só quando os dois confirmam é que o servidor sorteia o horário de largada e manda o texto pros dois ao mesmo tempo. Cada tecla digitada é retransmitida pro adversário via WebSocket, e o próprio servidor decide o vencedor (por tempo de conclusão) — evita que o cliente minta sobre o resultado.
-
-## Rodando local
+## Running locally
 
 ```bash
 npm install
 npm start
 ```
 
-Abre em `http://localhost:8080`. Pra testar o duelo, abre duas abas (ou dois dispositivos na mesma rede).
+Opens at `http://localhost:8080`. To test a duel, open two tabs (or two devices on the same network).
 
-Se o `better-sqlite3` não compilar no seu sistema, o servidor sobe do mesmo jeito — só o ranking fica desativado, o resto funciona normal.
+If `better-sqlite3` fails to build on your system, the server still starts — just the leaderboard gets disabled, everything else works normally.
 
-## Algumas decisões que talvez pareçam estranhas
-
-- **Letra errada trava o cursor.** Sem isso, dava pra "vencer" só martelando o teclado até bater a quantidade de caracteres, mesmo digitando lixo. Agora só avança com o prefixo 100% correto.
-- **"Sem acentos" não é a mesma coisa que tirar o acento de qualquer palavra.** Fazer isso transforma "mãe" em "mae", que não é uma palavra de verdade em português. O certo é sortear só entre as palavras que já são naturalmente sem acento.
-- **Caps Lock não deveria quebrar o jogo.** A comparação de caracteres ignora maiúscula/minúscula — digitar tudo em caixa alta por acidente não te bloqueia.
-
-## Estrutura
+## Structure
 
 ```
-server.js                  servidor (http + websocket + sqlite)
+server.js                  server (http + websocket + sqlite)
 package.json
 public/
-  index.html                o app inteiro — front-end, sem build step
+  index.html                the whole app — front-end, no build step
   manifest.webmanifest      PWA
-  sw.js                     service worker (cache offline pros modos solo/tempo)
-  icons/                    ícones do app
-  privacidade.html          política de privacidade
-Caddyfile, deploy/          configs de referência (nginx, systemd) pra quem for hospedar num VPS
+  sw.js                     service worker (offline cache for solo/timed modes)
+  icons/                    app icons
+  privacidade.html          privacy policy
+Caddyfile, deploy/          reference configs (nginx, systemd) for anyone self-hosting on a VPS
 ```
-
-## O que eu sei que falta
-
-- A validação de pontuação no modo solo roda inteiramente no cliente — dá pra trapacear editando o JS no console. Pra um projeto de portfólio, não achei que valia a pena resolver isso agora (exigiria recalcular tudo no servidor, incluindo o texto gerado).
-- Não tem conta de usuário. Cada jogador é identificado por um ID aleatório salvo no `localStorage` — some se limpar os dados do navegador.
-- iOS não é suportado como app nativo (só funciona como PWA pelo Safari). Publicar na App Store exigiria Mac + assinatura anual, então por enquanto ficou só no Google Play.
-
-## Licença
-
-MIT. Usa, copia, faz o que quiser.
