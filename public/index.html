@@ -6,7 +6,7 @@
 <title>Duelel — corrida de digitação</title>
 <meta name="description" content="Corrida de digitação em tempo real. Você contra o tempo ou contra outro jogador.">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#1e1f23">
+<meta name="theme-color" content="#28292d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,10 +18,10 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#1e1f23;
-    --bg2:#24262c;
-    --surface:#2b2d34;
-    --line:#32353e;
+    --bg:#28292d;
+    --bg2:#2e3036;
+    --surface:#35373e;
+    --line:#393c45;
     --sub:#565b67;      /* texto ainda não digitado */
     --text:#e8e8e2;     /* texto correto / títulos */
     --dim:#8b909c;      /* rótulos secundários */
@@ -47,8 +47,8 @@
   .wrap{
     min-height:100dvh;
     display:flex; flex-direction:column;
-    max-width:1040px; margin:0 auto;
-    padding:30px 8px 40px;
+    max-width:1180px; margin:0 auto;
+    padding:30px 24px 40px;
   }
 
   /* ---------- top bar ---------- */
@@ -109,7 +109,7 @@
   /* ---------- home ---------- */
   .home{display:flex; flex-direction:column; gap:36px; align-items:center; text-align:center}
   .home h1{
-    font-family:var(--mono); font-weight:700; font-size:clamp(34px,7vw,58px);
+    font-family:var(--mono); font-weight:700; font-size:clamp(38px,7.8vw,64px);
     letter-spacing:-2px; line-height:1;
   }
   .home h1 .a{color:var(--you)} .home h1 .b{color:var(--opp)}
@@ -137,18 +137,16 @@
   .mode:nth-child(3) .k{color:var(--dim)}
   .mode h3{font-size:20px; font-weight:600; min-height:2.6em; display:flex; align-items:center}
   .mode small{color:var(--dim); font-size:17px; line-height:1.6; min-height:4.8em; display:block}
-  .opts-row3{position:relative; display:flex; justify-content:center; width:100%; max-width:880px; margin:0 auto}
-  #optsRow{position:absolute; right:0; top:50%; transform:translateY(-50%); white-space:nowrap}
+  .opts-row{display:flex; align-items:center; justify-content:center; width:100%}
 
-  /* fade rápido: usado no modo foco e ao esconder acentos por idioma — some rápido, mas mantém o espaço (sem pulos) */
-  .bars, #soloToggle, #tapHint, #restartRow, #platBadge, footer, #optsRow{
+  /* fade rápido: usado no modo foco — some rápido, mas mantém o espaço (sem pulos) */
+  .bars, #soloToggle, #tapHint, #restartRow, #platBadge, footer{
     transition: opacity .12s ease, visibility 0s linear 0s;
   }
   .fx-off{
     opacity:0 !important; visibility:hidden !important; pointer-events:none !important;
     transition: opacity .12s ease, visibility 0s linear .12s !important;
   }
-  .opts{display:flex; gap:20px; align-items:center; justify-content:center; font-size:17px}
   .hint{color:var(--dim); font-size:15.5px; max-width:520px; line-height:1.5; opacity:.85}
 
   /* ---------- searching / lobby ---------- */
@@ -202,8 +200,8 @@
 
   .text-area{position:relative; cursor:text}
   #passage{
-    font-family:var(--mono); font-size:clamp(23px,3.7vw,31px); line-height:1.6;
-    color:var(--sub); letter-spacing:.3px; word-spacing:-2px; position:relative; word-break:break-word;
+    font-family:var(--mono); font-size:clamp(25px,3.9vw,33px); line-height:1.6;
+    color:var(--sub); letter-spacing:1.2px; word-spacing:6px; position:relative; word-break:break-word;
     padding:2px 0;
   }
   #passage .ch{transition:color .05s}
@@ -212,7 +210,7 @@
   #passage .ch.bad.sp{background:var(--err); border-radius:2px}
   .caret{
     position:absolute; width:4px; height:1.5em; top:0; left:0; border-radius:2.5px;
-    transition:left .09s ease, top .09s ease; pointer-events:none;
+    transition:left .16s cubic-bezier(.22,.61,.36,1), top .16s cubic-bezier(.22,.61,.36,1); pointer-events:none;
   }
   .caret.you{background:var(--you)}
   .caret.opp{background:var(--opp); opacity:.85}
@@ -287,27 +285,6 @@
   footer{margin-top:auto; padding-top:26px; text-align:center; color:var(--dim); font-size:15px}
   footer a{color:var(--dim)}
 
-  /* accent toggle (desktop) */
-  .acc-toggle{display:inline-flex; align-items:center; gap:9px; cursor:pointer; user-select:none}
-  .acc-toggle input{position:absolute; opacity:0; width:0; height:0}
-  .acc-box{
-    width:20px; height:20px; border-radius:6px; border:1.5px solid var(--line);
-    background:var(--bg2); display:flex; align-items:center; justify-content:center;
-    transition:all .15s; flex:none;
-  }
-  .acc-box::after{
-    content:''; width:9px; height:9px; border-radius:2px; background:var(--you);
-    transform:scale(0); transition:transform .15s;
-  }
-  .acc-toggle input:checked + .acc-box{border-color:var(--you); background:var(--you-soft)}
-  .acc-toggle input:checked + .acc-box::after{transform:scale(1)}
-  .acc-toggle input:focus-visible + .acc-box{box-shadow:0 0 0 3px var(--you-soft)}
-  .acc-txt{
-    font-family:var(--mono); font-size:18px; font-weight:500; letter-spacing:.5px;
-    color:var(--dim); transition:color .15s;
-  }
-  .acc-toggle input:checked ~ .acc-txt{color:var(--text)}
-
   /* shareable link box */
   .link-box{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; max-width:480px}
   .link-field{
@@ -318,9 +295,9 @@
   #copyBtn.done{background:var(--opp); border-color:var(--opp); color:#00252e}
 
   /* leaderboard */
-  .lb-list{display:flex; flex-direction:column; gap:6px; width:100%; max-width:460px}
-  .lb-group{display:flex; flex-direction:column; gap:6px; width:100%}
-  .lb-group + .lb-group{margin-top:20px}
+  .lb-list{display:flex; flex-wrap:wrap; gap:22px; width:100%; max-width:940px; align-items:flex-start; justify-content:center}
+  .lb-group{display:flex; flex-direction:column; gap:6px; flex:1 1 400px; min-width:280px; max-width:460px}
+  @media(max-width:620px){ .lb-group{flex-basis:100%; max-width:100%} }
   .lb-head{font-family:var(--mono); font-size:17px; font-weight:600; color:var(--text); text-align:left; padding:0 2px 4px; border-bottom:1px solid var(--line); margin-bottom:2px}
   .lb-row{
     display:flex; align-items:center; gap:12px; padding:11px 14px;
@@ -328,8 +305,20 @@
     font-family:var(--mono); font-size:18px;
   }
   .lb-row.me{border-color:var(--you); background:var(--you-soft)}
+
+  /* pódio: ouro, prata e bronze — o 1º lugar com borda e fonte maiores */
+  .lb-row.top1{
+    background:rgba(255,205,60,.14); border-color:#e6b422; border-width:2px;
+    font-size:20px; font-weight:700; padding:13px 14px;
+  }
+  .lb-row.top2{ background:rgba(192,197,206,.13); border-color:#b7bec7; }
+  .lb-row.top3{ background:rgba(205,127,50,.15); border-color:#cd7f32; }
+  .lb-row.top1 .lb-rank{color:#e6b422}
+  .lb-row.top2 .lb-rank{color:#b7bec7}
+  .lb-row.top3 .lb-rank{color:#cd7f32}
+  .lb-row.top1.me{background:rgba(255,205,60,.18)}
+
   .lb-rank{color:var(--dim); width:26px; font-weight:700; text-align:right; flex:none}
-  .lb-row:nth-child(1) .lb-rank{color:var(--you)}
   .lb-name{flex:1; text-align:left; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .lb-mode{font-size:14px; color:var(--dim); border:1px solid var(--line); padding:2px 7px; border-radius:999px}
   .lb-ppm{color:var(--you); font-weight:700; min-width:64px; text-align:right}
@@ -353,7 +342,8 @@
   /* botão reiniciar da tela solo */
   .restart-row{display:flex; justify-content:center; margin-top:4px; gap:10px; flex-wrap:wrap}
   .solo-toggle{display:flex; justify-content:center}
-  .solo-toggle .seg{max-width:220px; width:100%}
+  .solo-toggle .seg{max-width:460px; width:100%}
+  .solo-toggle .seg .seg-opt{font-size:14px; padding:7px 5px}
   .btn-restart{
     font-family:var(--mono); font-size:15.5px; color:var(--dim); background:transparent;
     border:1px solid var(--line); border-radius:8px; padding:8px 14px; cursor:pointer;
@@ -446,15 +436,8 @@
         </div>
       </div>
 
-      <div class="opts-row3">
-        <button class="btn ghost lb-link" onclick="openLeaderboard()" data-i18n="leaderboard_link">Ranking</button>
-        <div class="opts" id="optsRow">
-          <label class="acc-toggle" id="accToggle">
-            <input type="checkbox" id="optAccents" checked>
-            <span class="acc-box"></span>
-            <span class="acc-txt" id="accTxt">Acentos</span>
-          </label>
-        </div>
+      <div class="opts-row">
+        <button class="btn ghost lb-link" onclick="openLeaderboard()" data-i18n="leaderboard_link">🏆 Ranking</button>
       </div>
 
       <p class="hint" id="mpHint" style="display:none"></p>
@@ -522,6 +505,7 @@
         <div class="seg">
           <button class="seg-opt" data-mode="tempo" onclick="switchSoloMode('tempo')" data-i18n="seg_time">Tempo</button>
           <button class="seg-opt" data-mode="texto" onclick="switchSoloMode('texto')" data-i18n="seg_text">Texto</button>
+          <button class="seg-opt" data-mode="duelel" onclick="switchSoloMode('duelel')" data-i18n="seg_duelel">Texto Duelel</button>
         </div>
       </div>
 
@@ -567,7 +551,7 @@
       </div>
       <div class="btns">
         <button class="btn primary" id="rematchBtn" onclick="rematch()" data-i18n="play_again_btn">Jogar de novo</button>
-        <button class="btn" onclick="openLeaderboard()" data-i18n="leaderboard_btn_small">Ranking</button>
+        <button class="btn" onclick="openLeaderboard()" data-i18n="leaderboard_btn_small">🏆 Ranking</button>
         <button class="btn ghost" onclick="goHome()" data-i18n="home_btn">início</button>
       </div>
     </section>
@@ -582,7 +566,7 @@
       </div>
       <div class="btns">
         <button class="btn primary" id="soloAgainBtn" onclick="startSolo()" data-i18n="solo_again_btn">De novo</button>
-        <button class="btn" onclick="openLeaderboard()" data-i18n="leaderboard_btn_small">Ranking</button>
+        <button class="btn" onclick="openLeaderboard()" data-i18n="leaderboard_btn_small">🏆 Ranking</button>
         <button class="btn ghost" onclick="goHome()" data-i18n="home_btn">início</button>
       </div>
     </section>
@@ -601,7 +585,7 @@
    ========================================================================= */
 
 /* ---------- palavras (solo/tempo geram localmente; no duelo o texto vem do servidor) ---------- */
-const WORDS = ("tempo pessoa ano forma mundo vida dia mão parte casa olho água homem coisa história terra trabalho momento noite país hora palavra fim mês lugar cabeça exemplo verdade número grupo problema luz nome ideia corpo cidade amigo escola livro filho pai mãe força ponto campo governo festa música cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte ciência natureza animal planta flor árvore rio mar montanha céu sol lua estrela chuva vento fogo calor frio manhã tarde semana futuro passado presente minuto segundo começo meio verão inverno sonho medo alegria amor paz saúde dinheiro preço valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar dançar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir começar terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar rápido devagar forte claro simples bonito azul verde vermelho amarelo branco preto cinza rosa laranja roxo grande pequeno alto baixo largo estreito pesado leve novo velho bom mau feliz triste cansado fraco doce salgado quente livre certo errado justo fácil difícil caro barato limpo sujo irmão irmã avô avó tio tia primo sobrinho neto marido esposa namorado bebê criança jovem adulto idoso vizinho chefe cliente cama sofá armário espelho travesseiro cobertor toalha sabonete escova pente cozinha sala quarto banheiro jardim garagem varanda telhado parede chão teto escada pão leite ovo queijo carne peixe arroz feijão fruta legume açúcar sal óleo manteiga café chá suco cerveja vinho sapato camisa calça vestido casaco chapéu óculos relógio anel colar bolsa mochila avião trem ônibus bicicleta barco caminhão moto hospital igreja praça parque praia floresta deserto ilha ponte túnel estrada professor médico advogado engenheiro artista escritor músico ator cantor jornalista policial bombeiro cozinheiro motorista letra frase texto poema desenho pintura esporte futebol basquete natação segunda terça quarta quinta sexta sábado domingo janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro").split(" ");
+const WORDS = ("tempo pessoa ano forma mundo vida dia parte casa olho homem coisa terra trabalho momento noite hora palavra fim lugar exemplo verdade grupo problema luz nome ideia corpo cidade amigo escola livro filho pai ponto campo governo festa cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte natureza animal planta flor rio mar montanha sol lua estrela chuva vento fogo calor frio tarde semana futuro passado presente minuto segundo meio inverno sonho medo alegria amor paz dinheiro valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar devagar forte claro simples bonito azul verde vermelho amarelo branco preto cinza rosa laranja roxo grande pequeno alto baixo largo estreito pesado leve novo velho bom mau feliz triste cansado fraco doce salgado quente livre certo errado justo caro barato limpo sujo tio tia primo sobrinho neto marido esposa namorado jovem adulto idoso vizinho chefe cliente cama espelho travesseiro cobertor toalha sabonete escova pente cozinha sala quarto banheiro jardim garagem varanda telhado parede teto escada leite ovo queijo carne peixe arroz fruta legume sal manteiga suco cerveja vinho sapato camisa vestido casaco anel colar bolsa mochila trem bicicleta barco moto hospital igreja parque praia floresta deserto ilha ponte estrada professor advogado engenheiro artista escritor ator cantor jornalista policial bombeiro cozinheiro motorista letra frase texto poema desenho pintura esporte futebol basquete segunda quarta quinta sexta domingo janeiro fevereiro abril maio junho julho agosto setembro outubro novembro dezembro").split(" ");
 
 const WORDS_EN = ("time person year shape world life day hand part house eye water man thing history land work moment night country hour word end month place head example truth number group problem light name idea body city friend school book child father mother strength point field government party music color food street car door window table chair paper pen computer phone internet game movie theater art science nature animal plant flower tree river sea mountain sky sun moon star rain wind fire heat cold morning afternoon week future past present minute second start middle summer winter dream fear joy love peace health money price value account bank store market buy sell pay earn run walk talk hear think know want can make say live learn teach read write sing dance play study travel eat drink sleep wake smile like need try manage begin finish change stay return arrive leave enter climb descend open close take meet wait help care create build fix clean cook quick slow strong clear simple pretty blue green red yellow white black gray pink orange purple big small tall short wide narrow heavy new old good bad happy sad tired weak sweet salty hot free right wrong fair easy hard expensive cheap dirty brother sister grandfather grandmother uncle aunt cousin nephew grandson husband wife girlfriend baby kid teen adult elder neighbor boss customer bed sofa closet mirror pillow blanket towel soap brush comb kitchen room bathroom garden garage balcony roof wall floor ceiling stairs bread milk egg cheese meat fish rice beans fruit vegetable sugar salt oil butter coffee tea juice beer wine shoe shirt pants dress coat hat glasses watch ring necklace bag backpack plane train bus bicycle boat truck motorcycle hospital church square park beach forest desert island bridge tunnel road teacher doctor lawyer engineer artist writer musician actor singer journalist police firefighter driver letter sentence text poem drawing painting sport soccer basketball swimming monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december").split(" ");
 
@@ -626,18 +610,17 @@ const I18N = {
     mode2_desc:'Gera um link pra você mandar e desafiar quem quiser diretamente.',
     mode3_k:'3 · treino', mode3_title:'Treinar sozinho',
     mode3_desc:'Pratique sem oponente. Você contra o tempo — ou contra um texto.',
-    seg_time:'Tempo', seg_text:'Texto', accents_label:'Acentos',
-    leaderboard_link:'Ranking',
+    seg_time:'Tempo', seg_text:'Texto', seg_duelel:'Texto Duelel',
+    leaderboard_link:'🏆 Ranking',
     ready_title:'Prontos?', ready_you_hint:'toque para confirmar',
     ready_waiting:'aguardando…', ready_confirmed:'pronto ✓',
     offline_msg:'Modo online indisponível: o servidor está fora do ar. Você pode jogar Sozinho e 30 segundos normalmente!',
     wait_title_searching:'Procurando oponente…',
     wait_sub_mobile:'Buscando outro jogador no celular. Peça pra alguém abrir o Duelel e tocar em "Procurar partida".',
-    wait_sub_desktop:'Buscando outro jogador no desktop{acc}.',
-    acc_with:' e que também joga com acentos', acc_without:' e que também joga sem acentos',
+    wait_sub_desktop:'Buscando outro jogador no desktop.',
     copy_link_btn:'Copiar link', copy_link_done:'Copiado ✓', cancel_btn:'cancelar',
-    lb_title:'Ranking — melhores PPM', lb_back:'voltar',
-    lb_keyboard:'Teclado', lb_mobile:'Celular',
+    lb_title:'Ranking — Líderes', lb_back:'voltar',
+    lb_keyboard:'Teclado', lb_mobile:'Celular', lb_keyboard_duelel:'Texto Duelel - Teclado', lb_mobile_duelel:'Texto Duelel - Celular',
     lb_empty:'Ninguém aqui ainda. Seja o primeiro!', lb_loading:'carregando…',
     lb_offline:'Ranking indisponível: o servidor está fora do ar.',
     room_creating_title:'Criando sala…', room_creating_sub:'Um instante.',
@@ -645,7 +628,7 @@ const I18N = {
     room_joining_title:'Entrando na sala…', room_joining_sub:'Conectando com o anfitrião.',
     rematch_title:'Revanche', rematch_sub:'Aguardando o oponente aceitar…',
     rematch_accept_btn:'Aceitar revanche 🔥', rematch_btn:'Revanche',
-    play_again_btn:'Jogar de novo', leaderboard_btn_small:'Ranking', home_btn:'Início',
+    play_again_btn:'Jogar de novo', leaderboard_btn_small:'🏆 Ranking', home_btn:'Início',
     tap_hint:'toque no texto para abrir o teclado ⌨',
     time_label:'tempo', accuracy_label:'precisão',
     restart_label:'reiniciar', esc_back_label:'voltar',
@@ -671,18 +654,17 @@ const I18N = {
     mode2_desc:'Generate a link to send and challenge anyone directly.',
     mode3_k:'3 · practice', mode3_title:'Solo',
     mode3_desc:'Practice without an opponent. You against the clock — or against a text.',
-    seg_time:'Time', seg_text:'Text', accents_label:'Accents',
-    leaderboard_link:'Leaderboard',
+    seg_time:'Time', seg_text:'Text', seg_duelel:'Duelel Text',
+    leaderboard_link:'🏆 Leaderboard',
     ready_title:'Ready?', ready_you_hint:'tap to confirm',
     ready_waiting:'waiting…', ready_confirmed:'ready ✓',
     offline_msg:'Online mode unavailable: the server is offline. You can still play Solo and 30 seconds normally!',
     wait_title_searching:'Looking for an opponent…',
     wait_sub_mobile:'Looking for another player on mobile. Ask someone to open Duelel and tap "Quick match".',
-    wait_sub_desktop:'Looking for another player on desktop{acc}.',
-    acc_with:'', acc_without:'',
+    wait_sub_desktop:'Looking for another player on desktop.',
     copy_link_btn:'Copy link', copy_link_done:'Copied ✓', cancel_btn:'cancel',
     lb_title:'Leaderboard — best WPM', lb_back:'back',
-    lb_keyboard:'Keyboard', lb_mobile:'Mobile',
+    lb_keyboard:'Keyboard', lb_mobile:'Mobile', lb_keyboard_duelel:'Duelel Text - Keyboard', lb_mobile_duelel:'Duelel Text - Mobile',
     lb_empty:'No one here yet. Be the first!', lb_loading:'loading…',
     lb_offline:'Leaderboard unavailable: the server is offline.',
     room_creating_title:'Creating room…', room_creating_sub:'One moment.',
@@ -690,7 +672,7 @@ const I18N = {
     room_joining_title:'Joining room…', room_joining_sub:'Connecting to the host.',
     rematch_title:'Rematch', rematch_sub:'Waiting for opponent to accept…',
     rematch_accept_btn:'Accept rematch 🔥', rematch_btn:'Rematch',
-    play_again_btn:'Play again', leaderboard_btn_small:'Leaderboard', home_btn:'Home',
+    play_again_btn:'Play again', leaderboard_btn_small:'🏆 Leaderboard', home_btn:'Home',
     tap_hint:'tap the text to open the keyboard ⌨',
     time_label:'time', accuracy_label:'accuracy',
     restart_label:'restart', esc_back_label:'back',
@@ -716,7 +698,6 @@ function applyLang(){
     if(I18N.pt[k]!=null) el.textContent = t(k);
   });
   const sw=document.getElementById('langSwitch'); if(sw) sw.classList.toggle('is-en', LANG==='en');
-  updateAccentsVisibility();
 }
 function setLang(l){
   if(l!=='pt' && l!=='en') return;
@@ -766,34 +747,12 @@ function langPointerUp(e){
   el.addEventListener('pointerup', langPointerUp);
   el.addEventListener('pointercancel', langPointerUp);
 })();
-function updateAccentsVisibility(){
-  const r=document.getElementById('optsRow');
-  if(!r) return;
-  if(LANG==='pt'){
-    const tx=document.getElementById('accTxt'); if(tx) tx.textContent=t('accents_label');
-  }
-  if(IS_MOBILE){
-    r.style.display='none';           // no celular nunca existe — não muda em runtime, sem risco de "pulo"
-    r.classList.remove('fx-off');
-  }else{
-    r.style.display='';
-    r.classList.toggle('fx-off', LANG==='en');   // fade rápido, mantendo o espaço reservado
-  }
-}
-
-function stripAccents(s){ return s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
-// palavras que já são naturalmente sem acento (não é "mãe" virando "mae" — é só quem nunca teve acento)
-const WORDS_PT_NOACC = WORDS.filter(w => stripAccents(w) === w);
-function useAccents(){
-  if(LANG==='en') return false;                // inglês: sem conceito de acento
-  if(IS_MOBILE) return false;                 // celular: sempre sem acento
-  const el=document.getElementById('optAccents');
-  return el ? el.checked : true;
-}
+// texto fixo do modo "Texto Duelel" — sempre o mesmo, pra virar um benchmark comparável no ranking
+const DUELEL_TEXT_PT = "o dia estava bonito e o sol brilhava ele saiu de casa bem cedo e foi caminhar pelo parque levou seu livro uma garrafa e um pequeno lanche durante o caminho encontrou um velho amigo que nao via havia muito tempo os dois sentaram em um banco e ficaram falando sobre a vida o trabalho e os planos para o futuro depois de algum tempo ele seguiu seu caminho estava cansado mas se sentia bem ao chegar em casa tomou um banho preparou sua comida e passou o resto do dia lendo seu livro no fim da noite ele olhou pela janela e pensou em como os pequenos momentos do dia podem ser importantes nem sempre precisamos de grandes acontecimentos para ter um bom dia por isso decidiu simplesmente iniciar sem saber exatamente onde chegaria aprendendo durante o caminho podendo cometer erros mudar de ideia tentar novamente e continuar melhorando o mais importante e nao ficar parado esperando que tudo esteja perfeito cada pequeno passo pode ser importante estudar durante algumas horas praticar uma habilidade conversar trabalhar em um projeto ou simplesmente organizar as coisas que precisam ser feitas quando essas pequenas atitudes se acumulam elas podem transformar completamente a nossa vida eu ainda tenho muitas coisas para aprender e muitos objetivos para conquistar algumas vezes vou ficar cansado frustrado ou desmotivado mesmo assim posso continuar nao preciso ser perfeito todos os dias preciso apenas continuar tentando e aprender alguma coisa com cada experiencia talvez o futuro seja diferente do que eu imagino hoje e tudo bem o importante e construir esse futuro aos poucos aproveitando o presente e fazendo o melhor que eu conseguir com as oportunidades que aparecerem pelo caminho";
+const DUELEL_TEXT_EN = "the day was beautiful and the sun was shining he left home early in the morning and went for a walk in the park he brought his book a bottle of water and a small snack along the way he ran into an old friend he had not seen in a long time the two of them sat on a bench and talked about life work and their plans for the future after a while he continued on his way he was tired but he felt good when he got home he took a shower made himself something to eat and spent the rest of the day reading his book late at night he looked out the window and thought about how the small moments of the day can matter so much you do not always need big events to have a good day so he decided to simply start without knowing exactly where he would end up learning along the way making mistakes changing his mind trying again and slowly getting better what matters most is not staying still waiting for everything to be perfect every small step can matter studying for a few hours practicing a skill having a conversation working on a project or simply organizing the things that need to get done when these small habits add up they can completely change your life there is still so much to learn and so many goals to reach sometimes i will feel tired frustrated or unmotivated and that is fine i can still keep going i do not need to be perfect every day i just need to keep trying and learn something from every experience maybe the future will look different from what i imagine today and that is okay too what matters is building that future little by little enjoying the present and doing the best i can with the chances that come along the way";
+function duelelText(){ return LANG==='en' ? DUELEL_TEXT_EN : DUELEL_TEXT_PT; }
 function genWords(n){
-  let pool;
-  if(LANG==='en') pool = WORDS_EN;
-  else pool = useAccents() ? WORDS : WORDS_PT_NOACC;
+  const pool = LANG==='en' ? WORDS_EN : WORDS;
   let out=[];
   for(let i=0;i<n;i++) out.push(pool[Math.floor(Math.random()*pool.length)]);
   return out.join(" ");
@@ -829,7 +788,7 @@ function wsConnect(){
   try{ ws=new WebSocket(WS_URL); }catch(e){ return; }
   ws.onopen=()=>{
     wsOpen=true; everConnected=true; serverDown=false; clearTimeout(connGuard);
-    send('hello', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID, lang:LANG});
+    send('hello', {name:myName, platform:PLATFORM, playerId:PLAYER_ID, lang:LANG});
     const q=outbox; outbox=[]; q.forEach(m=>{ try{ws.send(m);}catch(e){} });
   };
   ws.onmessage=(e)=>{ let m; try{ m=JSON.parse(e.data); }catch(_){ return; } onServer(m); };
@@ -939,13 +898,11 @@ function startQuick(){
   show('wait');
   document.getElementById('waitSpinner').style.display='';
   document.getElementById('waitTitle').textContent=t('wait_title_searching');
-  const acc = useAccents();
-  const accTxt = (IS_MOBILE || LANG==='en') ? '' : (acc ? t('acc_with') : t('acc_without'));
   document.getElementById('waitSub').textContent = IS_MOBILE
     ? t('wait_sub_mobile')
-    : t('wait_sub_desktop').replace('{acc}', accTxt);
+    : t('wait_sub_desktop');
   document.getElementById('linkWrap').classList.add('hidden');
-  send('quick_join', {name:myName, platform:PLATFORM, accents:acc, playerId:PLAYER_ID, lang:LANG});
+  send('quick_join', {name:myName, platform:PLATFORM, playerId:PLAYER_ID, lang:LANG});
 }
 function cancelWait(){ send('leave',{}); show('home'); }
 
@@ -958,7 +915,7 @@ function createRoom(){
   document.getElementById('waitTitle').textContent=t('room_creating_title');
   document.getElementById('waitSub').textContent=t('room_creating_sub');
   document.getElementById('linkWrap').classList.add('hidden');
-  send('room_create', {name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID, lang:LANG});
+  send('room_create', {name:myName, platform:PLATFORM, playerId:PLAYER_ID, lang:LANG});
 }
 function showRoomLink(code){
   ctx = ctx||{}; ctx.roomCode=code;
@@ -980,7 +937,7 @@ function joinPending(){
   document.getElementById('waitTitle').textContent=t('room_joining_title');
   document.getElementById('waitSub').textContent=t('room_joining_sub');
   document.getElementById('linkWrap').classList.add('hidden');
-  send('room_join', {code:c, name:myName, platform:PLATFORM, accents:useAccents(), playerId:PLAYER_ID, lang:LANG});
+  send('room_join', {code:c, name:myName, platform:PLATFORM, playerId:PLAYER_ID, lang:LANG});
 }
 async function copyLink(){
   const li=document.getElementById('linkInput');
@@ -1104,7 +1061,11 @@ function updateSegUI(){
   document.querySelectorAll('.seg-opt').forEach(b=> b.classList.toggle('on', b.dataset.mode===soloMode));
 }
 function pickSoloMode(m){ soloMode=m; lsSet('duelel_solomode',m); updateSegUI(); }
-function startSoloSelected(){ if(soloMode==='texto') startSolo(); else startTimed(); }
+function startSoloSelected(){
+  if(soloMode==='texto') startSolo();
+  else if(soloMode==='duelel') startDuelelText();
+  else startTimed();
+}
 function switchSoloMode(m){
   if(m===soloMode && ctx && ctx.solo) return;
   pickSoloMode(m); startSoloSelected();
@@ -1113,10 +1074,18 @@ function switchSoloMode(m){
 function startSolo(){
   if(!ensureName()) return;
   stopAll();
-  ctx = { solo:true, mp:false, timed:false, text:genText(), value:'', started:false, startTime:0,
+  ctx = { solo:true, mp:false, timed:false, isDuelelText:false, text:genText(), value:'', started:false, startTime:0,
           finished:false, finishTime:0, ended:false, oppName:null };
   buildRace();
   runCountdown(Date.now()+3200);
+}
+function startDuelelText(){
+  if(!ensureName()) return;
+  stopAll();
+  ctx = { solo:true, mp:false, timed:true, isDuelelText:true, duration:30000, text:duelelText(), value:'',
+          started:false, startTime:0, finished:false, finishTime:0, ended:false, oppName:null, waitingFirstKey:true };
+  buildRace();
+  beginRace(); // sem contagem: cronômetro só liga na 1ª tecla, igual ao modo Tempo
 }
 function startTimed(){
   if(!ensureName()) return;
@@ -1128,7 +1097,9 @@ function startTimed(){
 }
 function restartSolo(){
   if(!ctx || !ctx.solo) return;
-  if(ctx.timed) startTimed(); else startSolo();
+  if(ctx.isDuelelText) startDuelelText();
+  else if(ctx.timed) startTimed();
+  else startSolo();
 }
 
 /* =========================================================================
@@ -1137,6 +1108,7 @@ function restartSolo(){
 function buildRace(){
   show('race');
   ctx.focusApplied=false;
+  ctx.keyDeltas=[]; ctx.lastKeyAt=0;
   exitFocusMode();
   const passage=document.getElementById('passage');
   passage.innerHTML='';
@@ -1175,7 +1147,7 @@ function buildRace(){
   scr.style.transform='translateY(0)';
   ctx.lineH = parseFloat(getComputedStyle(passage).lineHeight) || 40;
   const _fs = parseFloat(getComputedStyle(passage).fontSize) || 24;
-  const _caretH = Math.round(_fs * 0.95);                       // altura do traço (relativa à fonte)
+  const _caretH = Math.round(_fs * 1.15);                       // altura do traço (relativa à fonte)
   const RISE = 0.20;   // ↑ aumente pra SUBIR o traço, diminua pra descer
   ctx.caretDy = Math.round((ctx.lineH - _caretH)/2 - _fs*RISE);
   document.getElementById('caretYou').style.height = _caretH + 'px';
@@ -1248,6 +1220,7 @@ function beginRace(){
 }
 
 function onType(e){
+  if(e.isComposing) return;   // tecla morta em andamento (acento via compose no Linux/IME) — espera terminar
   if(!ctx.started || ctx.ended) return;
   if(!ctx.focusApplied){ ctx.focusApplied=true; enterFocusMode(); }
   if(ctx.timed && ctx.waitingFirstKey){
@@ -1271,6 +1244,13 @@ function onType(e){
   while(cp<raw.length && cp<ctx.text.length && raw[cp].toLowerCase()===ctx.text[cp].toLowerCase()) cp++;
   const v = ctx.text.slice(0, cp);   // guarda sempre a grafia canônica do texto-alvo
   if(v.length !== raw.length){ e.target.value=v; flashReject(); }
+
+  // registra o intervalo entre teclas aceitas (usado pro servidor detectar digitação robótica)
+  if(v.length>prev.length){
+    const now=performance.now();
+    if(ctx.lastKeyAt>0) ctx.keyDeltas.push(Math.round(now-ctx.lastKeyAt));
+    ctx.lastKeyAt=now;
+  }
 
   ctx.value=v; paint();
   positionCaret(document.getElementById('caretYou'), v.length);
@@ -1350,7 +1330,7 @@ function finishMine(){
   // online: para de mandar progresso periódico e informa o servidor; o resultado chega via race_over
   if(ctx.mpTick){ clearInterval(ctx.mpTick); ctx.mpTick=null; }
   send('progress', {idx:ctx.value.length, wpm:currentWpm(ctx.finishTime,correct), acc});
-  send('finished', {finishTime:ctx.finishTime, wpm:currentWpm(ctx.finishTime,correct), acc});
+  send('finished', {finishTime:ctx.finishTime, wpm:currentWpm(ctx.finishTime,correct), acc, keyDeltas:ctx.keyDeltas});
   document.getElementById('stTime').textContent = (ctx.finishTime/1000).toFixed(1)+'s ✓';
 }
 
@@ -1362,7 +1342,13 @@ function finalizeSolo(elapsedMs){
   const wpm=currentWpm(elapsedMs, correct);
   document.getElementById('soloWpm').textContent=wpm;
   document.getElementById('soloAcc').textContent=acc+'%';
-  if(ctx.timed){
+  if(ctx.isDuelelText){
+    document.getElementById('soloTitle').textContent=t('seg_duelel');
+    document.getElementById('soloThirdLab').textContent=t('words_label');
+    document.getElementById('soloTime').textContent=Math.round(correct/5);
+    document.getElementById('soloAgainBtn').onclick=startDuelelText;
+    submitScore(wpm,'duelel_text');
+  }else if(ctx.timed){
     document.getElementById('soloTitle').textContent=t('solo_timed_title');
     document.getElementById('soloThirdLab').textContent=t('words_label');
     document.getElementById('soloTime').textContent=Math.round(correct/5);
@@ -1386,6 +1372,7 @@ function modeLabel(mode){
   if(mode==='duelo') return t('mode_label_duelo');
   if(mode==='tempo') return t('mode_label_tempo');
   if(mode==='treino') return t('mode_label_treino');
+  if(mode==='duelel_text') return t('seg_duelel');
   return mode||'';
 }
 function submitScore(wpm, mode){
@@ -1420,8 +1407,10 @@ function renderLb(data){
   list.innerHTML='';
   list.appendChild(lbTable(t('lb_keyboard'), (data && data.desktop) || []));
   list.appendChild(lbTable(t('lb_mobile'), (data && data.mobile) || []));
+  list.appendChild(lbTable(t('lb_keyboard_duelel'), (data && data.desktopDuelel) || [], true));
+  list.appendChild(lbTable(t('lb_mobile_duelel'), (data && data.mobileDuelel) || [], true));
 }
-function lbTable(title, rows){
+function lbTable(title, rows, hideMode){
   const wrap=document.createElement('div');
   wrap.className='lb-group';
   const h=document.createElement('div');
@@ -1435,11 +1424,13 @@ function lbTable(title, rows){
   }
   rows.forEach((r,i)=>{
     const row=document.createElement('div');
-    row.className='lb-row'+(r.name===myName?' me':'');
+    const podium = i===0?' top1':i===1?' top2':i===2?' top3':'';
+    row.className='lb-row'+podium+(r.name===myName?' me':'');
     const medal = i+1;
+    const modeBadge = hideMode ? '' : `<span class="lb-mode">${modeLabel(r.mode)}</span>`;
     row.innerHTML=`<span class="lb-rank">${medal}</span>`+
                   `<span class="lb-name">${escapeHtml(r.name||'—')}</span>`+
-                  `<span class="lb-mode">${modeLabel(r.mode)}</span>`+
+                  modeBadge+
                   `<span class="lb-ppm">${r.wpm} ${t('unit_word')}</span>`;
     wrap.appendChild(row);
   });

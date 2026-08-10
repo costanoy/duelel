@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 8080;
+const MAX_PLAUSIBLE_WPM = 220; // acima do recorde mundial sustentado — qualquer coisa maior é bot/script, não humano
 
 function findPublicDir() {
   const candidates = [
@@ -34,72 +35,154 @@ const PUBLIC_DIR = findPublicDir();
 let db = null;
 try {
   const Database = require('better-sqlite3');
-  db = new Database(path.join(__dirname, 'duelel.db'));
+  // DB_PATH: aponte pra um volume persistente do Railway (ex.: /data/duelel.db) pra o
+  // ranking sobreviver aos deploys. Sem isso, o banco nasce vazio a cada novo deploy.
+  const dbPath = process.env.DB_PATH || path.join(__dirname, 'duelel.db');
+  db = new Database(dbPath);
+  console.log('[db] usando arquivo:', dbPath, process.env.DB_PATH ? '(via DB_PATH)' : '(padrão — NÃO sobrevive a deploys!)');
   db.pragma('journal_mode = WAL');
-  db.exec(`CREATE TABLE IF NOT EXISTS scores(
+
+  // players: trava um player_id (dispositivo/navegador) ao PRIMEIRO nome que ele usar —
+  // evita que a mesma pessoa crie várias entradas no ranking trocando de nome.
+  db.exec(`CREATE TABLE IF NOT EXISTS players(
     player_id TEXT PRIMARY KEY,
     name      TEXT,
-    wpm       INTEGER,
-    mode      TEXT,
     ts        INTEGER
   );`);
-  // migração: adiciona a coluna platform se o banco veio de uma versão anterior
+
+  // scores: uma linha por (nome, categoria) — "geral" (duelo/tempo/treino) e "duelel_text"
+  // (o texto fixo do Duelel) são rankings separados, então a mesma pessoa pode ter uma
+  // entrada em cada categoria, mas nunca duas na mesma categoria nem em duas plataformas.
+  db.exec(`CREATE TABLE IF NOT EXISTS scores(
+    name_key  TEXT,
+    category  TEXT,
+    name      TEXT,
+    player_id TEXT,
+    wpm       INTEGER,
+    mode      TEXT,
+    platform  TEXT,
+    ts        INTEGER,
+    PRIMARY KEY(name_key, category)
+  );`);
+
+  // migração 1: banco antigo tinha uma linha por player_id (dispositivo), não por nome.
   const cols = db.prepare("PRAGMA table_info(scores)").all().map((c) => c.name);
-  if (!cols.includes('platform')) {
-    db.exec("ALTER TABLE scores ADD COLUMN platform TEXT DEFAULT 'desktop'");
+  if (!cols.includes('name_key')) {
+    db.exec('ALTER TABLE scores RENAME TO scores_old');
+    db.exec(`CREATE TABLE scores(
+      name_key  TEXT, category TEXT, name TEXT, player_id TEXT,
+      wpm INTEGER, mode TEXT, platform TEXT, ts INTEGER,
+      PRIMARY KEY(name_key, category)
+    );`);
+    const oldCols = db.prepare("PRAGMA table_info(scores_old)").all().map((c) => c.name);
+    const hasPlatform = oldCols.includes('platform');
+    const oldRows = db.prepare('SELECT * FROM scores_old').all();
+    const insertMigrated = db.prepare(`
+      INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
+      VALUES(@name_key, 'geral', @name, @player_id, @wpm, @mode, @platform, @ts)
+      ON CONFLICT(name_key, category) DO UPDATE SET
+        name = excluded.name, player_id = excluded.player_id, wpm = excluded.wpm,
+        mode = excluded.mode, platform = excluded.platform, ts = excluded.ts
+      WHERE excluded.wpm > scores.wpm
+    `);
+    const migrate = db.transaction((rows) => {
+      for (const r of rows) {
+        const cleanName = String(r.name || '—').trim();
+        const key = (cleanName.toLowerCase() || r.player_id || 'anon').slice(0, 80);
+        insertMigrated.run({
+          name_key: key, name: cleanName || '—', player_id: r.player_id || null,
+          wpm: r.wpm, mode: r.mode, platform: hasPlatform ? (r.platform || 'desktop') : 'desktop',
+          ts: r.ts
+        });
+      }
+    });
+    migrate(oldRows);
+    db.exec('DROP TABLE scores_old');
+    console.log('[db] migração (por nome) concluída:', oldRows.length, '->', db.prepare('SELECT COUNT(*) n FROM scores').get().n);
+  } else if (!cols.includes('category')) {
+    // migração 2: já era por nome, mas ainda não tinha categoria — tudo vira "geral"
+    db.exec('ALTER TABLE scores RENAME TO scores_old2');
+    db.exec(`CREATE TABLE scores(
+      name_key  TEXT, category TEXT, name TEXT, player_id TEXT,
+      wpm INTEGER, mode TEXT, platform TEXT, ts INTEGER,
+      PRIMARY KEY(name_key, category)
+    );`);
+    db.exec(`INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
+      SELECT name_key, 'geral', name, player_id, wpm, mode, platform, ts FROM scores_old2`);
+    db.exec('DROP TABLE scores_old2');
+    console.log('[db] migração (categoria) concluída');
   }
   console.log('[db] SQLite pronto');
 } catch (e) {
   console.warn('[db] better-sqlite3 indisponível — ranking desativado:', e.message);
 }
 
+const getPlayerName = db && db.prepare(`SELECT name FROM players WHERE player_id = ?`);
+const insertPlayerName = db && db.prepare(`
+  INSERT INTO players(player_id, name, ts) VALUES(@player_id, @name, @ts)
+  ON CONFLICT(player_id) DO NOTHING
+`);
 const upsertScore = db && db.prepare(`
-  INSERT INTO scores(player_id, name, wpm, mode, ts, platform)
-  VALUES(@player_id, @name, @wpm, @mode, @ts, @platform)
-  ON CONFLICT(player_id) DO UPDATE SET
-    name = excluded.name, wpm = excluded.wpm, mode = excluded.mode,
-    ts = excluded.ts, platform = excluded.platform
+  INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
+  VALUES(@name_key, @category, @name, @player_id, @wpm, @mode, @platform, @ts)
+  ON CONFLICT(name_key, category) DO UPDATE SET
+    name = excluded.name, player_id = excluded.player_id, wpm = excluded.wpm,
+    mode = excluded.mode, platform = excluded.platform, ts = excluded.ts
   WHERE excluded.wpm > scores.wpm
 `);
-const selectTopPlat = db && db.prepare(
-  `SELECT name, wpm, mode FROM scores WHERE platform = ? ORDER BY wpm DESC LIMIT ?`
+const selectTopCat = db && db.prepare(
+  `SELECT name, wpm, mode FROM scores WHERE platform = ? AND category = ? ORDER BY wpm DESC LIMIT ?`
 );
 
 function submitScore(playerId, name, wpm, mode, platform) {
-  if (!db || !playerId) return;
+  if (!db) return;
   wpm = Math.round(Number(wpm) || 0);
-  if (wpm <= 0 || wpm > 400) return; // guarda simples contra valores absurdos
+  if (wpm <= 0 || wpm > MAX_PLAUSIBLE_WPM) return; // guarda contra valores absurdos (bot/script)
+
+  let cleanName = String(name || '—').slice(0, 14).trim();
+  const pid = playerId ? String(playerId).slice(0, 64) : null;
+
+  // trava a identidade: um player_id só pode ter UM nome no ranking pra sempre —
+  // se já tiver nome estabelecido, ignora o que veio agora e usa o de sempre.
+  if (pid) {
+    try {
+      const existing = getPlayerName.get(pid);
+      if (existing && existing.name) cleanName = existing.name;
+      else insertPlayerName.run({ player_id: pid, name: cleanName || '—', ts: Date.now() });
+    } catch (e) { /* ignora */ }
+  }
+
+  const nameKey = (cleanName.toLowerCase() || pid || 'anon').slice(0, 80);
+  const category = (mode === 'duelel_text') ? 'duelel_text' : 'geral';
   const plat = (platform === 'mobile') ? 'mobile' : 'desktop';
   try {
     upsertScore.run({
-      player_id: String(playerId).slice(0, 64),
-      name: String(name || '—').slice(0, 14),
-      wpm, mode: String(mode || 'duelo').slice(0, 12), ts: Date.now(), platform: plat
+      name_key: nameKey, category,
+      name: cleanName || '—',
+      player_id: pid,
+      wpm, mode: String(mode || 'duelo').slice(0, 12), platform: plat, ts: Date.now()
     });
   } catch (e) { /* ignora */ }
 }
-function topScores(n = 15) {
-  if (!db) return { desktop: [], mobile: [] };
+function topScores(n = 25) {
+  if (!db) return { desktop: [], mobile: [], desktopDuelel: [], mobileDuelel: [] };
   try {
     return {
-      desktop: selectTopPlat.all('desktop', n),
-      mobile: selectTopPlat.all('mobile', n)
+      desktop: selectTopCat.all('desktop', 'geral', n),
+      mobile: selectTopCat.all('mobile', 'geral', n),
+      desktopDuelel: selectTopCat.all('desktop', 'duelel_text', n),
+      mobileDuelel: selectTopCat.all('mobile', 'duelel_text', n)
     };
-  } catch (e) { return { desktop: [], mobile: [] }; }
+  } catch (e) { return { desktop: [], mobile: [], desktopDuelel: [], mobileDuelel: [] }; }
 }
 
 /* ---------------------------------------------------------------- palavras */
-const WORDS = ("tempo pessoa ano forma mundo vida dia mão parte casa olho água homem coisa história terra trabalho momento noite país hora palavra fim mês lugar cabeça exemplo verdade número grupo problema luz nome ideia corpo cidade amigo escola livro filho pai mãe força ponto campo governo festa música cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte ciência natureza animal planta flor árvore rio mar montanha céu sol lua estrela chuva vento fogo calor frio manhã tarde semana futuro passado presente minuto segundo começo meio verão inverno sonho medo alegria amor paz saúde dinheiro preço valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar dançar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir começar terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar rápido devagar forte claro simples bonito azul verde vermelho amarelo branco preto cinza rosa laranja roxo grande pequeno alto baixo largo estreito pesado leve novo velho bom mau feliz triste cansado fraco doce salgado quente livre certo errado justo fácil difícil caro barato limpo sujo irmão irmã avô avó tio tia primo sobrinho neto marido esposa namorado bebê criança jovem adulto idoso vizinho chefe cliente cama sofá armário espelho travesseiro cobertor toalha sabonete escova pente cozinha sala quarto banheiro jardim garagem varanda telhado parede chão teto escada pão leite ovo queijo carne peixe arroz feijão fruta legume açúcar sal óleo manteiga café chá suco cerveja vinho sapato camisa calça vestido casaco chapéu óculos relógio anel colar bolsa mochila avião trem ônibus bicicleta barco caminhão moto hospital igreja praça parque praia floresta deserto ilha ponte túnel estrada professor médico advogado engenheiro artista escritor músico ator cantor jornalista policial bombeiro cozinheiro motorista letra frase texto poema desenho pintura esporte futebol basquete natação segunda terça quarta quinta sexta sábado domingo janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro").split(" ");
+const WORDS = ("tempo pessoa ano forma mundo vida dia parte casa olho homem coisa terra trabalho momento noite hora palavra fim lugar exemplo verdade grupo problema luz nome ideia corpo cidade amigo escola livro filho pai ponto campo governo festa cor comida rua carro porta janela mesa cadeira papel caneta computador telefone internet jogo filme teatro arte natureza animal planta flor rio mar montanha sol lua estrela chuva vento fogo calor frio tarde semana futuro passado presente minuto segundo meio inverno sonho medo alegria amor paz dinheiro valor conta banco loja mercado comprar vender pagar ganhar correr andar falar ouvir pensar saber querer poder fazer dizer viver aprender ensinar ler escrever cantar jogar brincar trabalhar estudar viajar comer beber dormir acordar sorrir amar gostar precisar tentar conseguir terminar mudar ficar voltar chegar sair entrar subir descer abrir fechar pegar deixar encontrar esperar ajudar cuidar criar construir consertar limpar cozinhar plantar devagar forte claro simples bonito azul verde vermelho amarelo branco preto cinza rosa laranja roxo grande pequeno alto baixo largo estreito pesado leve novo velho bom mau feliz triste cansado fraco doce salgado quente livre certo errado justo caro barato limpo sujo tio tia primo sobrinho neto marido esposa namorado jovem adulto idoso vizinho chefe cliente cama espelho travesseiro cobertor toalha sabonete escova pente cozinha sala quarto banheiro jardim garagem varanda telhado parede teto escada leite ovo queijo carne peixe arroz fruta legume sal manteiga suco cerveja vinho sapato camisa vestido casaco anel colar bolsa mochila trem bicicleta barco moto hospital igreja parque praia floresta deserto ilha ponte estrada professor advogado engenheiro artista escritor ator cantor jornalista policial bombeiro cozinheiro motorista letra frase texto poema desenho pintura esporte futebol basquete segunda quarta quinta sexta domingo janeiro fevereiro abril maio junho julho agosto setembro outubro novembro dezembro").split(" ");
 
 const WORDS_EN = ("time person year shape world life day hand part house eye water man thing history land work moment night country hour word end month place head example truth number group problem light name idea body city friend school book child father mother strength point field government party music color food street car door window table chair paper pen computer phone internet game movie theater art science nature animal plant flower tree river sea mountain sky sun moon star rain wind fire heat cold morning afternoon week future past present minute second start middle summer winter dream fear joy love peace health money price value account bank store market buy sell pay earn run walk talk hear think know want can make say live learn teach read write sing dance play study travel eat drink sleep wake smile like need try manage begin finish change stay return arrive leave enter climb descend open close take meet wait help care create build fix clean cook quick slow strong clear simple pretty blue green red yellow white black gray pink orange purple big small tall short wide narrow heavy new old good bad happy sad tired weak sweet salty hot free right wrong fair easy hard expensive cheap dirty brother sister grandfather grandmother uncle aunt cousin nephew grandson husband wife girlfriend baby kid teen adult elder neighbor boss customer bed sofa closet mirror pillow blanket towel soap brush comb kitchen room bathroom garden garage balcony roof wall floor ceiling stairs bread milk egg cheese meat fish rice beans fruit vegetable sugar salt oil butter coffee tea juice beer wine shoe shirt pants dress coat hat glasses watch ring necklace bag backpack plane train bus bicycle boat truck motorcycle hospital church square park beach forest desert island bridge tunnel road teacher doctor lawyer engineer artist writer musician actor singer journalist police firefighter driver letter sentence text poem drawing painting sport soccer basketball swimming monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december").split(" ");
 
-function stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-// palavras que já são naturalmente sem acento (não gera "mae"/"arvore" a partir de "mãe"/"árvore")
-const WORDS_PT_NOACC = WORDS.filter((w) => stripAccents(w) === w);
-function genWords(n, accents, lang) {
-  let pool;
-  if (lang === 'en') pool = WORDS_EN;
-  else pool = accents ? WORDS : WORDS_PT_NOACC;
+function genWords(n, lang) {
+  const pool = (lang === 'en') ? WORDS_EN : WORDS;
   const out = [];
   for (let i = 0; i < n; i++) out.push(pool[(Math.random() * pool.length) | 0]);
   return out.join(' ');
@@ -146,12 +229,12 @@ const roomCode = () => Array.from({ length: 5 }, () =>
 function send(ws, type, payload) {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify(Object.assign({ type }, payload || {})));
 }
-function bucketOf(c) { return `${c.platform}|${c.accents ? 'a' : 'na'}|${c.lang || 'pt'}`; }
+function bucketOf(c) { return `${c.platform}|${c.lang || 'pt'}`; }
 
 wss.on('connection', (ws) => {
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
-  ws.c = { id: rid(), playerId: null, name: '—', platform: 'desktop', accents: true, lang: 'pt',
+  ws.c = { id: rid(), playerId: null, name: '—', platform: 'desktop', lang: 'pt',
            state: 'idle', race: null, opp: null, roomCode: null, bucket: null,
            lastWpm: 0, lastAcc: 100 };
   send(ws, 'welcome', { id: ws.c.id });
@@ -167,7 +250,6 @@ wss.on('connection', (ws) => {
 function applyProfile(c, m) {
   if (typeof m.name === 'string') c.name = m.name.slice(0, 14) || '—';
   if (m.platform === 'mobile' || m.platform === 'desktop') c.platform = m.platform;
-  if (typeof m.accents === 'boolean') c.accents = m.accents;
   if (m.lang === 'pt' || m.lang === 'en') c.lang = m.lang;
   if (typeof m.playerId === 'string') c.playerId = m.playerId.slice(0, 64);
 }
@@ -192,7 +274,7 @@ function handle(ws, m) {
       }
       if (opp) {
         queues.set(bucket, q);
-        startRace(opp, ws, c.accents, null, c.lang);
+        startRace(opp, ws, null, c.lang);
       } else {
         q.push(ws); queues.set(bucket, q);
         c.state = 'queue'; c.bucket = bucket;
@@ -222,7 +304,7 @@ function handle(ws, m) {
       if (r.guest || r.host === ws) { send(ws, 'error', { code: 'room_full' }); break; }
       r.guest = ws; c.roomCode = code;
       // sala é convite direto entre amigos: o texto sai no idioma de quem criou a sala
-      startRace(r.host, ws, r.host.c.accents, code, r.host.c.lang);
+      startRace(r.host, ws, code, r.host.c.lang);
       break;
     }
 
@@ -255,11 +337,14 @@ function handle(ws, m) {
     case 'finished': {
       const race = c.race;
       if (!race || race.over) break;
-      race.fin.set(ws, {
-        finishTime: Math.max(0, Number(m.finishTime) || 0),
-        wpm: m.wpm | 0, acc: (m.acc == null ? 100 : m.acc | 0)
-      });
-      c.lastWpm = m.wpm | 0; c.lastAcc = (m.acc == null ? 100 : m.acc | 0);
+      // trava o tempo relatado num mínimo fisicamente plausível pro tamanho do texto —
+      // sem isso, um autotyper reportando "terminei em 50ms" ganharia sempre, mesmo digitando certo.
+      const minMs = Math.ceil((race.text.length / 5) / MAX_PLAUSIBLE_WPM * 60000);
+      const finishTime = Math.max(minMs, Math.max(0, Number(m.finishTime) || 0));
+      const acc = (m.acc == null ? 100 : m.acc | 0);
+      const botLike = looksLikeBot(m.keyDeltas, acc);
+      race.fin.set(ws, { finishTime, wpm: m.wpm | 0, acc, botLike });
+      c.lastWpm = m.wpm | 0; c.lastAcc = acc;
       if (race.fin.size >= 2) decide(race);
       else if (!race.graceTimer) race.graceTimer = setTimeout(() => decide(race), 600);
       break;
@@ -271,7 +356,7 @@ function handle(ws, m) {
       break;
 
     case 'leaderboard_get':
-      send(ws, 'leaderboard', topScores(15));
+      send(ws, 'leaderboard', topScores(25));
       break;
 
     case 'rematch': {
@@ -288,7 +373,7 @@ function handle(ws, m) {
         const code = c.rematchCode || other.c.rematchCode || null;
         c.rematchWith = null; other.c.rematchWith = null;
         c.rematchWant = false; other.c.rematchWant = false;
-        startRace(other, ws, c.accents, code, c.lang);
+        startRace(other, ws, code, c.lang);
       } else {
         send(ws, 'waiting', { mode: 'rematch' });
         send(other, 'rematch_offer', {});
@@ -322,9 +407,9 @@ function closeRoom(code, ws) {
   ws.c.roomCode = null;
 }
 
-function startRace(a, b, accents, code, lang) {
+function startRace(a, b, code, lang) {
   const race = {
-    id: rid(), a, b, text: genWords(28, accents, lang),
+    id: rid(), a, b, text: genWords(28, lang),
     startAt: null, fin: new Map(), over: false, graceTimer: null, code,
     readyA: false, readyB: false
   };
@@ -344,11 +429,31 @@ function decide(race) {
   const { a, b } = race;
   const fa = race.fin.get(a), fb = race.fin.get(b);
   let winner;
-  if (fa && fb) winner = (fa.finishTime <= fb.finishTime) ? a : b;
-  else winner = fa ? a : b;
+  if (fa && fb) {
+    // se só um dos dois tem digitação com cara de bot, o outro vence — não importa quem "terminou primeiro"
+    if (fa.botLike && !fb.botLike) winner = b;
+    else if (fb.botLike && !fa.botLike) winner = a;
+    else winner = (fa.finishTime <= fb.finishTime) ? a : b;
+  } else {
+    winner = fa ? a : b;
+  }
   report(race, winner);
 }
 
+// detecta digitação robótica: humanos variam o intervalo entre teclas, um script simples não.
+// exige uma amostra mínima (senão qualquer coincidência vira falso positivo) e olha o
+// coeficiente de variação (desvio padrão / média) — bem baixo = ritmo mecânico demais.
+function looksLikeBot(deltas, acc) {
+  if (!Array.isArray(deltas) || deltas.length < 15) return false; // amostra pequena demais pra confiar
+  if (acc == null || acc < 98) return false;                       // erro real é sinal de humano
+  const clean = deltas.filter((d) => typeof d === 'number' && d >= 0 && d < 3000);
+  if (clean.length < 15) return false;
+  const mean = clean.reduce((s, d) => s + d, 0) / clean.length;
+  if (mean <= 0) return false;
+  const variance = clean.reduce((s, d) => s + (d - mean) ** 2, 0) / clean.length;
+  const cv = Math.sqrt(variance) / mean;   // coeficiente de variação
+  return cv < 0.15;                        // humano típico fica bem acima disso
+}
 function wpmCalc(chars, ms) {
   const min = ms / 60000;
   return min <= 0 ? 0 : Math.max(0, Math.round((chars / 5) / min));
@@ -362,13 +467,13 @@ function statOf(race, ws) {
   return { name: ws.c.name,
            wpm: wpmCalc(chars, elapsed),
            acc: f ? f.acc : (ws.c.lastAcc == null ? 100 : ws.c.lastAcc),
-           finishTime: f ? f.finishTime : null, finished: !!f };
+           finishTime: f ? f.finishTime : null, finished: !!f, botLike: !!(f && f.botLike) };
 }
 function report(race, winner) {
   const { a, b } = race;
   const sa = statOf(race, a), sb = statOf(race, b);
-  submitScore(a.c.playerId, a.c.name, sa.wpm, 'duelo', a.c.platform);
-  submitScore(b.c.playerId, b.c.name, sb.wpm, 'duelo', b.c.platform);
+  if (!sa.botLike) submitScore(a.c.playerId, a.c.name, sa.wpm, 'duelo', a.c.platform);
+  if (!sb.botLike) submitScore(b.c.playerId, b.c.name, sb.wpm, 'duelo', b.c.platform);
   send(a, 'race_over', { youWon: winner === a, you: sa, opp: sb });
   send(b, 'race_over', { youWon: winner === b, you: sb, opp: sa });
   for (const x of [a, b]) { x.c.state = 'idle'; x.c.race = null; x.c.opp = null; }
