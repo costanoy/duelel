@@ -35,8 +35,9 @@ const PUBLIC_DIR = findPublicDir();
 let db = null;
 try {
   const Database = require('better-sqlite3');
-  // DB_PATH: aponte pra um volume persistente do Railway (ex.: /data/duelel.db) pra o
-  // ranking sobreviver aos deploys. Sem isso, o banco nasce vazio a cada novo deploy.
+  // DB_PATH: aponte pra um disco/volume persistente do host (ex.: /var/data/duelel.db
+  // no Render) pra o ranking sobreviver aos deploys. Sem isso, o banco nasce vazio a
+  // cada novo deploy.
   const dbPath = process.env.DB_PATH || path.join(__dirname, 'duelel.db');
   db = new Database(dbPath);
   console.log('[db] usando arquivo:', dbPath, process.env.DB_PATH ? '(via DB_PATH)' : '(padrão — NÃO sobrevive a deploys!)');

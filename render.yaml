@@ -1,0 +1,24 @@
+# Blueprint do Render (render.com/docs/blueprint-spec).
+# Ao criar o serviço via "New > Blueprint" apontando pro repo, o Render lê
+# este arquivo e já configura build, start, variável de ambiente e disco.
+#
+# IMPORTANTE: o plano "free" do Render NÃO suporta disco persistente —
+# nesse plano o SQLite é apagado a cada deploy/restart (mesmo bug que já
+# aconteceu no Railway, documentado no HANDOFF.md). Pra manter o ranking
+# entre deploys, troque "plan: free" por "plan: starter" abaixo (pago,
+# ~US$7/mês) antes ou depois de criar o serviço — dá pra mudar isso e
+# anexar o disco a qualquer momento pelo dashboard do Render.
+services:
+  - type: web
+    name: duelel
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DB_PATH
+        value: /var/data/duelel.db
+    disk:
+      name: duelel-data
+      mountPath: /var/data
+      sizeGB: 1
