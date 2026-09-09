@@ -59,11 +59,9 @@
   }
   .brand{display:flex; align-items:center; gap:14px; cursor:pointer}
   .logo{
-    width:39px; height:39px; position:relative; flex:none;
+    height:34px; flex:none; display:flex; align-items:center;
   }
-  .logo .car{position:absolute; height:6px; border-radius:3px; left:0}
-  .logo .c1{top:10px; width:33px; background:var(--you)}
-  .logo .c2{top:22px; width:22px; background:var(--opp)}
+  .logo img{height:100%; width:auto; display:block}
   .brand b{font-family:var(--mono); font-weight:700; font-size:24.5px; letter-spacing:-.5px}
   .brand span{color:var(--dim); font-weight:500}
   .plat{
@@ -390,7 +388,7 @@
 <div class="wrap">
   <header>
     <div class="brand" onclick="goHome()">
-      <div class="logo"><div class="car c1"></div><div class="car c2"></div></div>
+      <div class="logo"><img src="/icons/logo-mark.png" alt="" width="600" height="228"></div>
       <b><span style="color:var(--you)">Duel</span><span style="color:var(--opp)">el</span></b>
     </div>
     <div class="lang-switch" id="langSwitch">
