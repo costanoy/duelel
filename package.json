@@ -1,7 +1,7 @@
 {
   "name": "duelel",
   "version": "1.0.0",
-  "description": "Corrida de digitação em tempo real (WebSocket + SQLite)",
+  "description": "Corrida de digitação em tempo real (WebSocket + Postgres)",
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "node": "20.x"
   },
   "dependencies": {
-    "ws": "^8.18.0",
-    "better-sqlite3": "^11.3.0"
+    "pg": "^8.23.0",
+    "ws": "^8.18.0"
   }
 }

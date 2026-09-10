@@ -2,7 +2,7 @@
    Duelel — servidor de produção
    - HTTP: serve os arquivos estáticos de /public
    - WebSocket (/ws): matchmaking, salas privadas, sincronização da corrida
-   - SQLite (arquivo duelel.db): ranking (melhor PPM por jogador)
+   - Postgres (Supabase, via DATABASE_URL): ranking (melhor PPM por jogador)
    Rodar:  npm install && npm start   (porta via env PORT, padrão 8080)
    ========================================================================= */
 'use strict';
@@ -31,112 +31,53 @@ function findPublicDir() {
 }
 const PUBLIC_DIR = findPublicDir();
 
-/* ---------------------------------------------------------------- SQLite */
-let db = null;
-try {
-  const Database = require('better-sqlite3');
-  // DB_PATH: aponte pra um disco/volume persistente do host (ex.: /var/data/duelel.db
-  // no Render) pra o ranking sobreviver aos deploys. Sem isso, o banco nasce vazio a
-  // cada novo deploy.
-  const dbPath = process.env.DB_PATH || path.join(__dirname, 'duelel.db');
-  db = new Database(dbPath);
-  console.log('[db] usando arquivo:', dbPath, process.env.DB_PATH ? '(via DB_PATH)' : '(padrão — NÃO sobrevive a deploys!)');
-  db.pragma('journal_mode = WAL');
+/* ---------------------------------------------------------------- Postgres (Supabase) */
+// Ranking guardado no Postgres do Supabase em vez de SQLite local — sobrevive a
+// qualquer deploy/restart sem precisar de disco persistente no host, e o driver
+// `pg` é JS puro (sem compilação nativa, ao contrário do better-sqlite3).
+let pool = null;
+if (process.env.DATABASE_URL) {
+  const { Pool } = require('pg');
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+  pool.on('error', (e) => console.warn('[db] erro assíncrono no pool:', e.message));
 
-  // players: trava um player_id (dispositivo/navegador) ao PRIMEIRO nome que ele usar —
-  // evita que a mesma pessoa crie várias entradas no ranking trocando de nome.
-  db.exec(`CREATE TABLE IF NOT EXISTS players(
-    player_id TEXT PRIMARY KEY,
-    name      TEXT,
-    ts        INTEGER
-  );`);
-
-  // scores: uma linha por (nome, categoria) — "geral" (duelo/tempo/treino) e "duelel_text"
-  // (o texto fixo do Duelel) são rankings separados, então a mesma pessoa pode ter uma
-  // entrada em cada categoria, mas nunca duas na mesma categoria nem em duas plataformas.
-  db.exec(`CREATE TABLE IF NOT EXISTS scores(
-    name_key  TEXT,
-    category  TEXT,
-    name      TEXT,
-    player_id TEXT,
-    wpm       INTEGER,
-    mode      TEXT,
-    platform  TEXT,
-    ts        INTEGER,
-    PRIMARY KEY(name_key, category)
-  );`);
-
-  // migração 1: banco antigo tinha uma linha por player_id (dispositivo), não por nome.
-  const cols = db.prepare("PRAGMA table_info(scores)").all().map((c) => c.name);
-  if (!cols.includes('name_key')) {
-    db.exec('ALTER TABLE scores RENAME TO scores_old');
-    db.exec(`CREATE TABLE scores(
-      name_key  TEXT, category TEXT, name TEXT, player_id TEXT,
-      wpm INTEGER, mode TEXT, platform TEXT, ts INTEGER,
-      PRIMARY KEY(name_key, category)
-    );`);
-    const oldCols = db.prepare("PRAGMA table_info(scores_old)").all().map((c) => c.name);
-    const hasPlatform = oldCols.includes('platform');
-    const oldRows = db.prepare('SELECT * FROM scores_old').all();
-    const insertMigrated = db.prepare(`
-      INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
-      VALUES(@name_key, 'geral', @name, @player_id, @wpm, @mode, @platform, @ts)
-      ON CONFLICT(name_key, category) DO UPDATE SET
-        name = excluded.name, player_id = excluded.player_id, wpm = excluded.wpm,
-        mode = excluded.mode, platform = excluded.platform, ts = excluded.ts
-      WHERE excluded.wpm > scores.wpm
-    `);
-    const migrate = db.transaction((rows) => {
-      for (const r of rows) {
-        const cleanName = String(r.name || '—').trim();
-        const key = (cleanName.toLowerCase() || r.player_id || 'anon').slice(0, 80);
-        insertMigrated.run({
-          name_key: key, name: cleanName || '—', player_id: r.player_id || null,
-          wpm: r.wpm, mode: r.mode, platform: hasPlatform ? (r.platform || 'desktop') : 'desktop',
-          ts: r.ts
-        });
-      }
-    });
-    migrate(oldRows);
-    db.exec('DROP TABLE scores_old');
-    console.log('[db] migração (por nome) concluída:', oldRows.length, '->', db.prepare('SELECT COUNT(*) n FROM scores').get().n);
-  } else if (!cols.includes('category')) {
-    // migração 2: já era por nome, mas ainda não tinha categoria — tudo vira "geral"
-    db.exec('ALTER TABLE scores RENAME TO scores_old2');
-    db.exec(`CREATE TABLE scores(
-      name_key  TEXT, category TEXT, name TEXT, player_id TEXT,
-      wpm INTEGER, mode TEXT, platform TEXT, ts INTEGER,
-      PRIMARY KEY(name_key, category)
-    );`);
-    db.exec(`INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
-      SELECT name_key, 'geral', name, player_id, wpm, mode, platform, ts FROM scores_old2`);
-    db.exec('DROP TABLE scores_old2');
-    console.log('[db] migração (categoria) concluída');
-  }
-  console.log('[db] SQLite pronto');
-} catch (e) {
-  console.warn('[db] better-sqlite3 indisponível — ranking desativado:', e.message);
+  (async () => {
+    try {
+      // players: trava um player_id (dispositivo/navegador) ao PRIMEIRO nome que ele usar —
+      // evita que a mesma pessoa crie várias entradas no ranking trocando de nome.
+      await pool.query(`CREATE TABLE IF NOT EXISTS players(
+        player_id TEXT PRIMARY KEY,
+        name      TEXT,
+        ts        BIGINT
+      )`);
+      // scores: uma linha por (nome, categoria) — "geral" (duelo/tempo/treino) e "duelel_text"
+      // (o texto fixo do Duelel) são rankings separados, então a mesma pessoa pode ter uma
+      // entrada em cada categoria, mas nunca duas na mesma categoria nem em duas plataformas.
+      await pool.query(`CREATE TABLE IF NOT EXISTS scores(
+        name_key  TEXT,
+        category  TEXT,
+        name      TEXT,
+        player_id TEXT,
+        wpm       INTEGER,
+        mode      TEXT,
+        platform  TEXT,
+        ts        BIGINT,
+        PRIMARY KEY(name_key, category)
+      )`);
+      console.log('[db] Postgres (Supabase) pronto');
+    } catch (e) {
+      console.warn('[db] falha ao preparar tabelas no Postgres:', e.message);
+    }
+  })();
+} else {
+  console.warn('[db] DATABASE_URL não configurada — ranking desativado');
 }
 
-const getPlayerName = db && db.prepare(`SELECT name FROM players WHERE player_id = ?`);
-const insertPlayerName = db && db.prepare(`
-  INSERT INTO players(player_id, name, ts) VALUES(@player_id, @name, @ts)
-  ON CONFLICT(player_id) DO NOTHING
-`);
-const upsertScore = db && db.prepare(`
-  INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
-  VALUES(@name_key, @category, @name, @player_id, @wpm, @mode, @platform, @ts)
-  ON CONFLICT(name_key, category) DO UPDATE SET
-    name = excluded.name, player_id = excluded.player_id, wpm = excluded.wpm,
-    mode = excluded.mode, platform = excluded.platform, ts = excluded.ts
-  WHERE excluded.wpm > scores.wpm
-`);
-const selectTopCat = db && db.prepare(
-  `SELECT name, wpm, mode FROM scores WHERE platform = ? AND category = ? ORDER BY wpm DESC LIMIT ?`
-);
-
-function submitScore(playerId, name, wpm, mode, platform) {
-  if (!db) return;
+async function submitScore(playerId, name, wpm, mode, platform) {
+  if (!pool) return;
   wpm = Math.round(Number(wpm) || 0);
   if (wpm <= 0 || wpm > MAX_PLAUSIBLE_WPM) return; // guarda contra valores absurdos (bot/script)
 
@@ -147,9 +88,12 @@ function submitScore(playerId, name, wpm, mode, platform) {
   // se já tiver nome estabelecido, ignora o que veio agora e usa o de sempre.
   if (pid) {
     try {
-      const existing = getPlayerName.get(pid);
-      if (existing && existing.name) cleanName = existing.name;
-      else insertPlayerName.run({ player_id: pid, name: cleanName || '—', ts: Date.now() });
+      const { rows } = await pool.query('SELECT name FROM players WHERE player_id = $1', [pid]);
+      if (rows[0] && rows[0].name) cleanName = rows[0].name;
+      else await pool.query(
+        'INSERT INTO players(player_id, name, ts) VALUES($1, $2, $3) ON CONFLICT(player_id) DO NOTHING',
+        [pid, cleanName || '—', Date.now()]
+      );
     } catch (e) { /* ignora */ }
   }
 
@@ -157,24 +101,34 @@ function submitScore(playerId, name, wpm, mode, platform) {
   const category = (mode === 'duelel_text') ? 'duelel_text' : 'geral';
   const plat = (platform === 'mobile') ? 'mobile' : 'desktop';
   try {
-    upsertScore.run({
-      name_key: nameKey, category,
-      name: cleanName || '—',
-      player_id: pid,
-      wpm, mode: String(mode || 'duelo').slice(0, 12), platform: plat, ts: Date.now()
-    });
+    await pool.query(
+      `INSERT INTO scores(name_key, category, name, player_id, wpm, mode, platform, ts)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT(name_key, category) DO UPDATE SET
+         name = excluded.name, player_id = excluded.player_id, wpm = excluded.wpm,
+         mode = excluded.mode, platform = excluded.platform, ts = excluded.ts
+       WHERE excluded.wpm > scores.wpm`,
+      [nameKey, category, cleanName || '—', pid, wpm, String(mode || 'duelo').slice(0, 12), plat, Date.now()]
+    );
   } catch (e) { /* ignora */ }
 }
-function topScores(n = 25) {
-  if (!db) return { desktop: [], mobile: [], desktopDuelel: [], mobileDuelel: [] };
+async function topScores(n = 25) {
+  const empty = { desktop: [], mobile: [], desktopDuelel: [], mobileDuelel: [] };
+  if (!pool) return empty;
+  const top = async (platform, category) => {
+    const { rows } = await pool.query(
+      'SELECT name, wpm, mode FROM scores WHERE platform = $1 AND category = $2 ORDER BY wpm DESC LIMIT $3',
+      [platform, category, n]
+    );
+    return rows;
+  };
   try {
-    return {
-      desktop: selectTopCat.all('desktop', 'geral', n),
-      mobile: selectTopCat.all('mobile', 'geral', n),
-      desktopDuelel: selectTopCat.all('desktop', 'duelel_text', n),
-      mobileDuelel: selectTopCat.all('mobile', 'duelel_text', n)
-    };
-  } catch (e) { return { desktop: [], mobile: [], desktopDuelel: [], mobileDuelel: [] }; }
+    const [desktop, mobile, desktopDuelel, mobileDuelel] = await Promise.all([
+      top('desktop', 'geral'), top('mobile', 'geral'),
+      top('desktop', 'duelel_text'), top('mobile', 'duelel_text')
+    ]);
+    return { desktop, mobile, desktopDuelel, mobileDuelel };
+  } catch (e) { return empty; }
 }
 
 /* ---------------------------------------------------------------- palavras */
@@ -255,7 +209,7 @@ function applyProfile(c, m) {
   if (typeof m.playerId === 'string') c.playerId = m.playerId.slice(0, 64);
 }
 
-function handle(ws, m) {
+async function handle(ws, m) {
   const c = ws.c;
   switch (m.type) {
     case 'hello':
@@ -353,11 +307,11 @@ function handle(ws, m) {
 
     case 'score_submit':
       applyProfile(c, m);
-      submitScore(c.playerId, c.name, m.wpm, m.mode || 'treino', c.platform);
+      await submitScore(c.playerId, c.name, m.wpm, m.mode || 'treino', c.platform);
       break;
 
     case 'leaderboard_get':
-      send(ws, 'leaderboard', topScores(25));
+      send(ws, 'leaderboard', await topScores(25));
       break;
 
     case 'rematch': {

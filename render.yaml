@@ -2,21 +2,16 @@
 # Ao criar o serviço via "New > Blueprint" apontando pro repo, o Render lê
 # este arquivo e já configura build e start sozinho.
 #
-# Plano atual: "free" — sem disco persistente (o Render bloqueia `disk:` em
-# planos free). Isso significa que o SQLite (ranking) reseta a cada
-# deploy/restart, e o serviço "dorme" após inatividade (primeiro acesso
-# depois disso demora uns 30-50s pra acordar).
+# Plano atual: "free" — sem disco persistente, mas isso não é mais um problema
+# pro ranking: ele mora no Postgres do Supabase (fora do Render), então
+# sobrevive a qualquer deploy/restart independente do plano. O único efeito
+# do plano free hoje é o serviço "dormir" após inatividade (primeiro acesso
+# depois disso demora uns 30-50s pra acordar) — troque "plan: free" por
+# "plan: starter" (pago, ~US$7/mês) se quiser eliminar esse cold-start.
 #
-# Pra manter o ranking entre deploys mais pra frente: troque "plan: free"
-# por "plan: starter" (pago, ~US$7/mês) e adicione de volta:
-#
-#   envVars:
-#     - key: DB_PATH
-#       value: /var/data/duelel.db
-#   disk:
-#     name: duelel-data
-#     mountPath: /var/data
-#     sizeGB: 1
+# DATABASE_URL precisa ser preenchida manualmente no dashboard do Render
+# (Settings > Environment) com a connection string do Supabase — não fica
+# neste arquivo por ser um segredo.
 services:
   - type: web
     name: duelel
@@ -24,3 +19,6 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false

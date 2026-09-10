@@ -18,9 +18,9 @@ This project started back in October 2021, as my first web game. Since then, wit
 
 **Front-end:** plain HTML/CSS/JS. Wanted to see how far I could take it without React/Vue, and it ended up keeping the app light and fast to load.
 
-**Back-end:** Node.js with the native `http` module serving static files, `ws` handling the WebSocket side (matchmaking, rooms, real-time race sync), and `better-sqlite3` storing the leaderboard.
+**Back-end:** Node.js with the native `http` module serving static files, `ws` handling the WebSocket side (matchmaking, rooms, real-time race sync), and `pg` storing the leaderboard in a Postgres database (Supabase).
 
-**Deploy:** Render, auto-deploying on every push to GitHub. A persistent disk holds the SQLite file (via the `DB_PATH` env var) so the leaderboard survives redeploys.
+**Deploy:** Render, auto-deploying on every push to GitHub. The leaderboard lives in Supabase's Postgres (via the `DATABASE_URL` env var), so it survives redeploys and restarts regardless of Render's plan.
 
 ## How the multiplayer works
 
@@ -36,12 +36,12 @@ npm start
 
 Opens at `http://localhost:8080`. To test a duel, open two tabs (or two devices on the same network).
 
-If `better-sqlite3` fails to build on your system, the server still starts — just the leaderboard gets disabled, everything else works normally.
+Without a `DATABASE_URL` env var pointing to a Postgres database, the server still starts — the leaderboard just gets disabled, everything else works normally.
 
 ## Structure
 
 ```
-server.js                  server (http + websocket + sqlite)
+server.js                  server (http + websocket + postgres)
 package.json
 render.yaml                 Render deploy blueprint
 public/
@@ -75,9 +75,9 @@ Esse projeto nasceu em outubro de 2021, como o meu primeiro jogo para Web. Desse
 
 **Front-end:** HTML/CSS/JS puro. Queria ver até onde dava pra levar sem React/Vue, e no fim ajudou a manter o app leve e rápido de carregar.
 
-**Back-end:** Node.js com o módulo `http` nativo servindo os arquivos estáticos, `ws` cuidando do WebSocket (matchmaking, salas, sincronização da corrida em tempo real) e `better-sqlite3` guardando o ranking.
+**Back-end:** Node.js com o módulo `http` nativo servindo os arquivos estáticos, `ws` cuidando do WebSocket (matchmaking, salas, sincronização da corrida em tempo real) e `pg` guardando o ranking num banco Postgres (Supabase).
 
-**Deploy:** Render, com deploy automático a cada push no GitHub. Um disco persistente guarda o arquivo SQLite (via a variável `DB_PATH`) pra o ranking sobreviver aos redeploys.
+**Deploy:** Render, com deploy automático a cada push no GitHub. O ranking mora no Postgres do Supabase (via a variável `DATABASE_URL`), então sobrevive a redeploys e restarts independente do plano do Render.
 
 ## Como funciona o multiplayer
 
@@ -93,12 +93,12 @@ npm start
 
 Abre em `http://localhost:8080`. Pra testar um duelo, abra duas abas (ou dois dispositivos na mesma rede).
 
-Se o `better-sqlite3` não compilar no seu sistema, o servidor sobe do mesmo jeito, só o ranking fica desativado, o resto funciona normal.
+Sem a variável `DATABASE_URL` apontando pra um banco Postgres, o servidor sobe do mesmo jeito, só o ranking fica desativado, o resto funciona normal.
 
 ## Estrutura
 
 ```
-server.js                  server (http + websocket + sqlite)
+server.js                  server (http + websocket + postgres)
 package.json
 render.yaml                 blueprint de deploy do Render
 public/
