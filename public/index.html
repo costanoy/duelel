@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#28292d;
@@ -32,6 +32,13 @@
     --opp-soft:#49c5e622;
     --mono:'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
     --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --display:'Barlow Condensed', 'Arial Narrow', sans-serif;   /* títulos */
+  }
+  /* cantos chanfrados (superior esquerdo + inferior direito) usados em cartões, painéis e caixas de texto */
+  .mode, .result, .ready-row, .invite, input.txt, .link-field{
+    border:0; border-radius:0;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    box-shadow:inset 0 -4px 0 var(--c);   /* linha de cor embaixo */
   }
   *{box-sizing:border-box; margin:0; padding:0}
   html,body{height:100%}
@@ -116,24 +123,28 @@
   .name-row{display:flex; gap:10px; align-items:center}
   .name-row label{font-size:17px; color:var(--dim); min-width:46px; text-align:right}
   input.txt{
-    background:var(--surface); border:1px solid var(--line); color:var(--text);
-    font-family:var(--mono); font-size:19px; padding:11px 14px; border-radius:10px;
-    width:170px; text-align:center; outline:none; transition:border-color .15s;
+    --cut:8px; --c:var(--line);
+    background:var(--surface); color:var(--text);
+    font-family:var(--mono); font-size:19px; padding:11px 14px 13px;
+    width:170px; text-align:center; outline:none; transition:box-shadow .15s;
   }
-  input.txt:focus{border-color:var(--you)}
+  input.txt:focus{--c:var(--you)}
   .modes{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; width:100%; max-width:880px}
   @media(max-width:620px){.modes{grid-template-columns:1fr}}
   .mode{
-    background:var(--surface); border:1px solid var(--line); border-radius:14px;
-    padding:16px 28px; text-align:left; cursor:pointer;
-    transition:border-color .15s, transform .12s, background .15s;
+    --cut:16px; --c:var(--you);
+    background:var(--surface);
+    padding:16px 28px 20px; text-align:left; cursor:pointer;
+    transition:transform .12s, background .15s;
     display:flex; flex-direction:column; gap:8px;
   }
-  .mode:hover{border-color:var(--you); transform:translateY(-2px)}
+  .mode:hover{background:#3d4048; transform:translateY(-2px)}
+  .mode:nth-child(2){--c:var(--opp)}
+  .mode:nth-child(3){--c:var(--sub)}
   .mode .k{font-family:var(--mono); font-size:15px; color:var(--you)}
   .mode:nth-child(2) .k{color:var(--opp)}
   .mode:nth-child(3) .k{color:var(--dim)}
-  .mode h3{font-size:20px; font-weight:600; min-height:2.6em; display:flex; align-items:center}
+  .mode h3{font:italic 800 30px/1 var(--display); text-transform:uppercase; min-height:2.2em; display:flex; align-items:center}
   .mode small{color:var(--dim); font-size:17px; line-height:1.6; min-height:4.8em; display:block}
   .opts-row{display:flex; align-items:center; justify-content:center; width:100%}
 
@@ -151,15 +162,16 @@
   .status{display:flex; flex-direction:column; align-items:center; gap:28px; text-align:center}
   .spinner{width:42px; height:42px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--you); animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .status h2{font-family:var(--mono); font-size:28px; font-weight:500}
+  .status h2{font:italic 800 46px/1 var(--display); text-transform:uppercase}
   .status .sub{color:var(--dim); font-size:18px; max-width:460px; line-height:1.5}
 
   /* tela "prontos?" */
   .ready-wrap{display:flex; flex-direction:column; gap:12px; width:100%; max-width:380px}
   .ready-row{
     display:flex; align-items:center; gap:14px; padding:14px 18px;
-    background:var(--surface); border:1px solid var(--line); border-radius:12px;
-    transition:border-color .15s, background .15s;
+    --cut:12px; --c:var(--line);
+    background:var(--surface);
+    transition:box-shadow .15s, background .15s;
   }
   .ready-row.you{cursor:pointer}
   .ready-row.opp{cursor:default; opacity:.92}
@@ -172,10 +184,10 @@
     content:''; position:absolute; width:11px; height:6px; border-left:2.5px solid #1a1400;
     border-bottom:2.5px solid #1a1400; transform:rotate(-45deg) translateY(-1px); opacity:0; transition:opacity .15s;
   }
-  .ready-row.you.checked{border-color:var(--you); background:var(--you-soft)}
+  .ready-row.you.checked{--c:var(--you); background:#4a4537}
   .ready-row.you.checked .ready-box{background:var(--you); border-color:var(--you)}
   .ready-row.you.checked .ready-box::after{opacity:1}
-  .ready-row.opp.checked{border-color:var(--opp); background:var(--opp-soft)}
+  .ready-row.opp.checked{--c:var(--opp); background:#324550}
   .ready-row.opp.checked .ready-box{background:var(--opp); border-color:var(--opp)}
   .ready-row.opp.checked .ready-box::after{opacity:1; border-color:#00252e}
   .ready-name{flex:1; text-align:left; font-family:var(--mono); font-size:17px; color:var(--text); font-weight:600}
@@ -243,13 +255,14 @@
 
   /* result */
   .result{
-    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    --cut:20px; --c:var(--you);
+    background:var(--surface);
     padding:38px 30px; width:100%; max-width:520px; margin:0 auto; text-align:center;
     display:flex; flex-direction:column; gap:30px;
   }
-  .verdict{font-family:var(--mono); font-size:41px; font-weight:700; letter-spacing:-1px}
+  .verdict{font:italic 800 58px/1 var(--display); text-transform:uppercase}
   .verdict.win{color:var(--you)} .verdict.lose{color:var(--opp)} .verdict.tie{color:var(--text)}
-  .rgrid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .rgrid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); overflow:hidden}
   .rcell{background:var(--surface); padding:20px 12px 16px; display:flex; flex-direction:column; gap:6px; align-items:center}
   .rcell .rn{font-family:var(--mono); font-size:17px; font-weight:600}
   .rcell.you .rn{color:var(--you)} .rcell.opp .rn{color:var(--opp)}
@@ -287,8 +300,9 @@
   .link-box{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; max-width:480px}
   .link-field{
     flex:1; min-width:220px; font-family:var(--mono); font-size:17px; color:var(--you);
-    background:var(--bg2); border:1px solid var(--line); border-radius:10px;
-    padding:12px 14px; outline:none; text-overflow:ellipsis;
+    --cut:8px; --c:var(--you);
+    background:var(--bg2);
+    padding:12px 14px 14px; outline:none; text-overflow:ellipsis;
   }
   #copyBtn.done{background:var(--opp); border-color:var(--opp); color:#00252e}
 
@@ -296,7 +310,7 @@
   .lb-list{display:flex; flex-wrap:wrap; gap:22px; width:100%; max-width:940px; align-items:flex-start; justify-content:center}
   .lb-group{display:flex; flex-direction:column; gap:6px; flex:1 1 400px; min-width:280px; max-width:460px}
   @media(max-width:620px){ .lb-group{flex-basis:100%; max-width:100%} }
-  .lb-head{font-family:var(--mono); font-size:17px; font-weight:600; color:var(--text); text-align:left; padding:0 2px 4px; border-bottom:1px solid var(--line); margin-bottom:2px}
+  .lb-head{font:italic 800 24px/1.1 var(--display); text-transform:uppercase; color:var(--text); text-align:left; padding:0 2px 4px; border-bottom:1px solid var(--line); margin-bottom:2px}
   .lb-row{
     display:flex; align-items:center; gap:12px; padding:11px 14px;
     background:var(--surface); border:1px solid var(--line); border-radius:10px;
@@ -358,15 +372,16 @@
   .btn-restart:hover .kbd, .btn-restart:focus-visible .kbd{color:var(--you); border-color:var(--you)}
 
   /* nome obrigatório */
-  input.txt.err{border-color:var(--err); animation:shake .3s}
+  input.txt.err{--c:var(--err); animation:shake .3s}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   .name-err{color:var(--err); font-size:15px; font-family:var(--mono); height:14px; margin-top:-9px; opacity:0; transition:opacity .15s}
   .name-err.show{opacity:1}
 
   /* banner de convite */
   .invite{
-    background:var(--you-soft); border:1px solid var(--you); border-radius:12px;
-    padding:14px 18px; display:flex; flex-direction:column; gap:10px; align-items:center;
+    --cut:12px; --c:var(--you);
+    background:#3f3c34;
+    padding:14px 18px 18px; display:flex; flex-direction:column; gap:10px; align-items:center;
     max-width:440px;
   }
   .invite p{color:var(--text); font-size:18px; font-family:var(--mono)}
@@ -1281,7 +1296,7 @@ function sendProgress(force){
 function stats(){
   let correct=0; const v=ctx.value, t=ctx.text;
   for(let i=0;i<v.length;i++) if(v[i]===t[i]) correct++;
-  const acc = ctx.keys ? Math.max(0, Math.round((ctx.keys-ctx.errs)/ctx.keys*100))
+  const acc = ctx.keys ? Math.max(0, Math.round((ctx.keys-(ctx.errs||0))/ctx.keys*100))
                        : (v.length? Math.round(correct/v.length*100):100);
   return {correct, acc, typed:v.length};
 }
