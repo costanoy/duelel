@@ -146,7 +146,7 @@
   .mode:nth-child(3) .k{color:var(--dim)}
   .mode h3{font:italic 800 30px/1 var(--display); text-transform:uppercase; min-height:2.2em; display:flex; align-items:center}
   .mode small{color:var(--dim); font-size:17px; line-height:1.6; min-height:4.8em; display:block}
-  .opts-row{display:flex; align-items:center; justify-content:center; width:100%}
+  .opts-row{display:flex; align-items:center; justify-content:center; gap:10px; width:100%}
 
   /* fade rápido: usado no modo foco — some rápido, mas mantém o espaço (sem pulos) */
   .bars, #soloToggle, #tapHint, #restartRow, #platBadge, footer{
@@ -451,6 +451,7 @@
 
       <div class="opts-row">
         <button class="btn ghost lb-link" onclick="openLeaderboard()" data-i18n="leaderboard_link">🏆 Ranking</button>
+        <button class="btn ghost" id="soundBtn" onclick="toggleSound()">🔊</button>
       </div>
 
       <p class="hint" id="mpHint" style="display:none"></p>
@@ -777,6 +778,35 @@ function uid(){ return 'u'+Math.random().toString(36).slice(2,10); }
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
+/* ---------- sons (efeitos curtos; dá pra desligar no botão ao lado do Ranking) ---------- */
+let soundOn = lsGet('duelel_sound')!=='off';
+const SFX = {};
+['count','go','match','win'].forEach(n=>{
+  const a=new Audio();
+  a.volume=0.6;
+  // carrega inteiro e toca de um blob: o servidor não atende pedidos parciais (Range), que o Safari exige pra áudio
+  fetch('/sounds/'+n+'.mp3').then(r=>r.ok ? r.blob() : Promise.reject()).then(b=>{ a.src=URL.createObjectURL(b); SFX[n]=a; }).catch(()=>{});
+});
+function sfx(name){
+  if(!soundOn || !SFX[name]) return;
+  try{
+    SFX[name].currentTime=0;
+    const p=SFX[name].play();
+    if(p && p.catch) p.catch(()=>{});   // navegador bloqueia áudio antes do 1º clique — ignora
+  }catch(e){}
+}
+function updateSoundBtn(){
+  const b=document.getElementById('soundBtn');
+  b.textContent = soundOn ? '🔊' : '🔇';
+  b.setAttribute('aria-label', soundOn ? 'som ligado' : 'som desligado');
+}
+function toggleSound(){
+  soundOn=!soundOn;
+  lsSet('duelel_sound', soundOn ? 'on' : 'off');
+  updateSoundBtn();
+  if(soundOn) sfx('count');   // dá um retorno de que o som voltou
+}
+
 const PLAYER_ID = (function(){
   let v=lsGet('duelel_pid');
   if(!v){ v=uid()+Date.now().toString(36); lsSet('duelel_pid',v); }
@@ -969,6 +999,7 @@ function onMatchFound(m){
     value:'', started:false, startTime:0, finished:false, finishTime:0, ended:false, lastSent:0
   };
   iAmReady=false;
+  sfx('match');
   document.getElementById('readyMeName').textContent = myName;
   document.getElementById('readyOppName').textContent = ctx.oppName;
   document.getElementById('readyMeRow').classList.remove('checked');
@@ -1007,7 +1038,7 @@ function endMpRace(m){
   if(!ctx) return;
   ctx.ended=true; stopAll();
   const verdict=document.getElementById('verdict');
-  if(m.youWon){ verdict.textContent=t('you_win'); verdict.className='verdict win'; }
+  if(m.youWon){ verdict.textContent=t('you_win'); verdict.className='verdict win'; sfx('win'); }
   else { verdict.textContent=t('you_lose'); verdict.className='verdict lose'; }
   fillResult(m.you, m.opp);
 }
@@ -1021,7 +1052,7 @@ function endMpLeft(){
     const el = ctx.finished?ctx.finishTime:(Date.now()-ctx.startTime);
     const you={ name:myName, wpm:currentWpm(el,correct), acc, finishTime:(ctx.finished?ctx.finishTime:null) };
     const verdict=document.getElementById('verdict');
-    verdict.textContent=t('you_win_oppleft'); verdict.className='verdict win';
+    verdict.textContent=t('you_win_oppleft'); verdict.className='verdict win'; sfx('win');
     fillResult(you, { name:(ctx&&ctx.oppName)||t('default_opp_name'), wpm:0, acc:null, finishTime:null });
   }else{
     // saiu fora da corrida (ex.: enquanto esperava revanche) → não dá pra continuar
@@ -1195,14 +1226,17 @@ function runCountdown(startAt){
   const ov=document.getElementById('overlay');
   const num=document.getElementById('countNum');
   ov.classList.remove('hidden');
+  let beeped=0;   // último número que já tocou o bipe
   (function tick(){
     const left = startAt - Date.now();
     if(left<=0){
+      sfx('go');
       num.textContent=t('go_text'); num.classList.add('go');
       setTimeout(()=>{ ov.classList.add('hidden'); num.classList.remove('go'); beginRace(); }, 420);
       return;
     }
     const secs=Math.min(3, Math.ceil(left/1000));
+    if(secs!==beeped){ beeped=secs; sfx('count'); }
     if(num.textContent!==String(secs)){ num.textContent=secs; num.classList.remove('go'); num.style.animation='none'; void num.offsetWidth; num.style.animation=''; }
     requestAnimationFrame(tick);
   })();
@@ -1496,6 +1530,7 @@ document.getElementById('nick').addEventListener('keydown',(e)=>{
 /* init */
 (function init(){
   applyLang();
+  updateSoundBtn();
   const nick=document.getElementById('nick');
   if(myName) nick.value=myName;
   updateSegUI();
