@@ -2,9 +2,43 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Duelel — corrida de digitação</title>
-<meta name="description" content="Corrida de digitação em tempo real. Você contra o tempo ou contra outro jogador.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duelel — corrida de digitação online 1 contra 1</title>
+<meta name="description" content="Corrida de digitação em tempo real. Duele contra outro jogador online, chame um amigo para uma sala privada ou treine sozinho e suba no ranking de PPM.">
+<link rel="canonical" href="https://duelel.cyberhat.com.br/">
+<link rel="alternate" hreflang="pt-BR" href="https://duelel.cyberhat.com.br/">
+<link rel="alternate" hreflang="en" href="https://duelel.cyberhat.com.br/en">
+<link rel="alternate" hreflang="x-default" href="https://duelel.cyberhat.com.br/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duelel">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:url" content="https://duelel.cyberhat.com.br/">
+<meta property="og:title" content="Duelel — corrida de digitação online 1 contra 1">
+<meta property="og:description" content="Duele contra outro jogador em tempo real, chame um amigo para uma sala privada ou treine sozinho.">
+<meta property="og:image" content="https://duelel.cyberhat.com.br/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duelel — corrida de digitação em tempo real">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Duelel — corrida de digitação online 1 contra 1">
+<meta name="twitter:description" content="Duele contra outro jogador em tempo real, chame um amigo para uma sala privada ou treine sozinho.">
+<meta name="twitter:image" content="https://duelel.cyberhat.com.br/icons/og-image.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Duelel",
+  "url": "https://duelel.cyberhat.com.br/",
+  "description": "Corrida de digitação em tempo real, 1 contra 1, com salas privadas, modo treino e ranking de PPM.",
+  "applicationCategory": "GameApplication",
+  "genre": "Typing game",
+  "operatingSystem": "Any",
+  "inLanguage": ["pt-BR", "en"],
+  "image": "https://duelel.cyberhat.com.br/icons/og-image.png",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+}
+</script>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#28292d">
 <meta name="mobile-web-app-capable" content="yes">
@@ -50,6 +84,7 @@
     overflow-x:hidden;
     user-select:none;
     -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;   /* sem zoom de toque duplo ao tocar no texto; pinça continua liberada */
   }
   .wrap{
     min-height:100dvh;
@@ -108,7 +143,7 @@
     header{margin-bottom:18px}
     main{margin:0 0 auto}
     .brand b{display:none}
-    footer{display:none}
+    footer .note, footer .sep{display:none}
   }
 
   /* ---------- home ---------- */
@@ -586,8 +621,9 @@
     </section>
   </main>
 
-  <footer data-i18n="footer_note">
-    ppm = palavras por minuto (5 caracteres = 1 palavra), padrão universal de digitação.
+  <footer>
+    <span class="note" data-i18n="footer_note">ppm = palavras por minuto (5 caracteres = 1 palavra), padrão universal de digitação.</span>
+    <span class="sep">·</span> <a href="/privacidade.html" data-i18n="privacy_link">Privacidade</a>
   </footer>
 </div>
 
@@ -604,17 +640,21 @@ const WORDS = ("tempo pessoa ano forma mundo vida dia parte casa olho homem cois
 const WORDS_EN = ("time person year shape world life day hand part house eye water man thing history land work moment night country hour word end month place head example truth number group problem light name idea body city friend school book child father mother strength point field government party music color food street car door window table chair paper pen computer phone internet game movie theater art science nature animal plant flower tree river sea mountain sky sun moon star rain wind fire heat cold morning afternoon week future past present minute second start middle summer winter dream fear joy love peace health money price value account bank store market buy sell pay earn run walk talk hear think know want can make say live learn teach read write sing dance play study travel eat drink sleep wake smile like need try manage begin finish change stay return arrive leave enter climb descend open close take meet wait help care create build fix clean cook quick slow strong clear simple pretty blue green red yellow white black gray pink orange purple big small tall short wide narrow heavy new old good bad happy sad tired weak sweet salty hot free right wrong fair easy hard expensive cheap dirty brother sister grandfather grandmother uncle aunt cousin nephew grandson husband wife girlfriend baby kid teen adult elder neighbor boss customer bed sofa closet mirror pillow blanket towel soap brush comb kitchen room bathroom garden garage balcony roof wall floor ceiling stairs bread milk egg cheese meat fish rice beans fruit vegetable sugar salt oil butter coffee tea juice beer wine shoe shirt pants dress coat hat glasses watch ring necklace bag backpack plane train bus bicycle boat truck motorcycle hospital church square park beach forest desert island bridge tunnel road teacher doctor lawyer engineer artist writer musician actor singer journalist police firefighter driver letter sentence text poem drawing painting sport soccer basketball swimming monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december").split(" ");
 
 /* ---------- idioma / i18n ---------- */
+// o idioma vem da URL ( / = pt, /en = en ), assim o Google indexa cada versão no seu endereço.
+// na raiz, quem já escolheu inglês antes vai direto pra /en.
+const isEnPath = () => /^\/en\/?$/.test(location.pathname);
+function langPath(l){ return (l==='en' ? '/en' : '/') + location.search + location.hash; }
 function detectLang(){
-  const saved = lsGet('duelel_lang');
-  if(saved==='pt' || saved==='en') return saved;
-  return (navigator.language||'').toLowerCase().startsWith('pt') ? 'pt' : 'en';
+  if(isEnPath()) return 'en';
+  if(lsGet('duelel_lang')==='en'){ history.replaceState(null, '', langPath('en')); return 'en'; }
+  return 'pt';
 }
 let LANG = detectLang();
 
 const I18N = {
   pt:{
-    meta_title:'Duelel — corrida de digitação',
-    meta_desc:'Corrida de digitação em tempo real. Você contra o tempo ou contra outro jogador.',
+    meta_title:'Duelel — corrida de digitação online 1 contra 1',
+    meta_desc:'Corrida de digitação em tempo real. Duele contra outro jogador online, chame um amigo para uma sala privada ou treine sozinho e suba no ranking de PPM.',
     name_label:'Nome', name_error:'digite um nome para jogar',
     invite_text:'🏁 Você foi convidado para um duelo. Digite seu nome e entre na sala.',
     invite_btn:'Entrar na sala →',
@@ -654,11 +694,12 @@ const I18N = {
     solo_practice_done:'treino concluído', solo_timed_title:'30 segundos', words_label:'palavras',
     solo_again_btn:'De novo', go_text:'Vai!',
     footer_note:'ppm = palavras por minuto (5 caracteres = 1 palavra), padrão universal de digitação.',
+    privacy_link:'Privacidade',
     unit_word:'ppm', mode_label_duelo:'duelo', mode_label_tempo:'30s', mode_label_treino:'treino'
   },
   en:{
-    meta_title:'Duelel — typing race',
-    meta_desc:'Real-time typing race. You against the clock or against another player.',
+    meta_title:'Duelel — 1v1 online typing race',
+    meta_desc:'Real-time typing race. Duel another player online, invite a friend to a private room or practice solo and climb the WPM leaderboard.',
     name_label:'Name', name_error:'enter a name to play',
     invite_text:'🏁 You\'ve been invited to a duel. Enter your name and join the room.',
     invite_btn:'Join the room →',
@@ -698,6 +739,7 @@ const I18N = {
     solo_practice_done:'practice complete', solo_timed_title:'30 seconds', words_label:'words',
     solo_again_btn:'Again', go_text:'Go!',
     footer_note:'wpm = words per minute (5 characters = 1 word), the universal typing standard.',
+    privacy_link:'Privacy',
     unit_word:'wpm', mode_label_duelo:'duel', mode_label_tempo:'30s', mode_label_treino:'practice'
   }
 };
@@ -707,6 +749,7 @@ function applyLang(){
   document.documentElement.lang = LANG==='pt' ? 'pt-BR' : 'en';
   document.title = t('meta_title');
   const md=document.querySelector('meta[name="description"]'); if(md) md.setAttribute('content', t('meta_desc'));
+  const cn=document.querySelector('link[rel="canonical"]'); if(cn) cn.href = location.origin + (LANG==='en' ? '/en' : '/');
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const k=el.getAttribute('data-i18n');
     if(I18N.pt[k]!=null) el.textContent = t(k);
@@ -718,6 +761,7 @@ function setLang(l){
   if(l===LANG) return;
   LANG = l;
   lsSet('duelel_lang', LANG);
+  history.replaceState(null, '', langPath(LANG));
   applyLang();
 }
 // clique em qualquer parte do switch (trilho, bolinha) também alterna — os botões PT/EN continuam indo direto pro seu idioma

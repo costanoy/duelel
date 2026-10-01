@@ -94,7 +94,7 @@ async function submitScore(playerId, name, wpm, mode, platform) {
         'INSERT INTO players(player_id, name, ts) VALUES($1, $2, $3) ON CONFLICT(player_id) DO NOTHING',
         [pid, cleanName || '—', Date.now()]
       );
-    } catch (e) { /* ignora */ }
+    } catch (e) { console.warn('[db] falha ao registrar jogador:', e.message); }
   }
 
   const nameKey = (cleanName.toLowerCase() || pid || 'anon').slice(0, 80);
@@ -110,7 +110,7 @@ async function submitScore(playerId, name, wpm, mode, platform) {
        WHERE excluded.wpm > scores.wpm`,
       [nameKey, category, cleanName || '—', pid, wpm, String(mode || 'duelo').slice(0, 12), plat, Date.now()]
     );
-  } catch (e) { /* ignora */ }
+  } catch (e) { console.warn('[db] falha ao salvar pontuação:', e.message); }
 }
 async function topScores(n = 25) {
   const empty = { desktop: [], mobile: [], desktopDuelel: [], mobileDuelel: [] };
@@ -128,7 +128,7 @@ async function topScores(n = 25) {
       top('desktop', 'duelel_text'), top('mobile', 'duelel_text')
     ]);
     return { desktop, mobile, desktopDuelel, mobileDuelel };
-  } catch (e) { return empty; }
+  } catch (e) { console.warn('[db] falha ao ler ranking:', e.message); return empty; }
 }
 
 /* ---------------------------------------------------------------- palavras */
@@ -148,13 +148,33 @@ const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
-  '.mp3': 'audio/mpeg',
+  '.mp3': 'audio/mpeg', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+  '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
   '.webmanifest': 'application/manifest+json'
 };
+// /en serve o mesmo index.html com o <head> em inglês (prévias de link e buscadores leem o HTML sem rodar JS)
+const SITE = 'https://duelel.cyberhat.com.br';
+const EN_TITLE = 'Duelel — 1v1 online typing race';
+const EN_SHARE = 'Duel another player in real time, invite a friend to a private room or practice solo.';
+const EN_HEAD = [
+  ['<html lang="pt-BR">', '<html lang="en">'],
+  [/<title>[^<]*<\/title>/, `<title>${EN_TITLE}</title>`],
+  [/(<meta name="description" content=")[^"]*/, '$1Real-time typing race. Duel another player online, invite a friend to a private room or practice solo and climb the WPM leaderboard.'],
+  [`<link rel="canonical" href="${SITE}/">`, `<link rel="canonical" href="${SITE}/en">`],
+  [`<meta property="og:url" content="${SITE}/">`, `<meta property="og:url" content="${SITE}/en">`],
+  ['<meta property="og:locale" content="pt_BR">', '<meta property="og:locale" content="en_US">'],
+  ['<meta property="og:locale:alternate" content="en_US">', '<meta property="og:locale:alternate" content="pt_BR">'],
+  [/(<meta (?:property="og|name="twitter):title" content=")[^"]*/g, `$1${EN_TITLE}`],
+  [/(<meta (?:property="og|name="twitter):description" content=")[^"]*/g, `$1${EN_SHARE}`],
+  [/(<meta property="og:image:alt" content=")[^"]*/, '$1Duelel — real-time typing race']
+];
+const toEnglishHead = (html) => EN_HEAD.reduce((h, [from, to]) => h.replace(from, to), html);
+
 const server = http.createServer((req, res) => {
   if (req.url === '/health') { res.writeHead(200); return res.end('ok'); }
   let url = decodeURIComponent(req.url.split('?')[0]);
-  if (url === '/') url = '/index.html';
+  const isEn = (url === '/en' || url === '/en/');
+  if (url === '/' || isEn) url = '/index.html';
   const filePath = path.join(PUBLIC_DIR, path.normalize(url).replace(/^(\.\.[\/\\])+/, ''));
   if (!filePath.startsWith(PUBLIC_DIR)) { res.writeHead(403); return res.end('forbidden'); }
   fs.readFile(filePath, (err, data) => {
@@ -168,7 +188,7 @@ const server = http.createServer((req, res) => {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       'Cache-Control': revalidate ? 'no-cache' : 'public, max-age=86400'
     });
-    res.end(data);
+    res.end(isEn ? toEnglishHead(data.toString('utf8')) : data);
   });
 });
 
