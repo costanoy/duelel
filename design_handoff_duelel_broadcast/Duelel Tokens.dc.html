@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700;1,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#26272B;color:#E8E8E2;font-family:Inter,sans-serif}a{color:#F2C14E}a:hover{color:#E8E8E2}</style>
+</helmet>
+<div style="max-width:1200px;margin:0 auto;padding:64px 32px 120px;display:flex;flex-direction:column;gap:72px">
+
+  <header style="display:flex;flex-direction:column;gap:20px">
+    <dc-import name="Logo" size="28" hint-size="200px,36px"></dc-import>
+    <div style="font:italic 800 72px/0.95 'Barlow Condensed';text-transform:uppercase">Tokens de design</div>
+    <div style="font:400 15px Inter;color:#8B909C">Telas: <a href="Duelel Telas 1-4.dc.html">01–04</a> · <a href="Duelel Telas 5-9.dc.html">05–09</a></div>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:20px">
+    <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">Paleta</div>
+    <div style="font:500 12px 'JetBrains Mono';color:#8B909C;text-transform:uppercase;letter-spacing:0.12em">Base (escuro)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+      <sc-for list="{{ base }}" as="c" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;background:{{ c.hex }};box-shadow:inset 0 0 0 1px #393C45"></div><div style="font:600 13px Inter">{{ c.name }}</div><div style="font:500 12px 'JetBrains Mono';color:#8B909C">{{ c.hex }} · {{ c.use }}</div></div>
+      </sc-for>
+    </div>
+    <div style="font:500 12px 'JetBrains Mono';color:#8B909C;text-transform:uppercase;letter-spacing:0.12em;margin-top:12px">Times e estados</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+      <sc-for list="{{ accents }}" as="c" hint-placeholder-count="6">
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;background:{{ c.hex }}"></div><div style="font:600 13px Inter">{{ c.name }}</div><div style="font:500 12px 'JetBrains Mono';color:#8B909C">{{ c.hex }} · {{ c.use }}</div></div>
+      </sc-for>
+    </div>
+    <p style="margin:0;font:400 14px/1.6 Inter;color:#B5B9C2;max-width:760px">Mudanças em relação ao atual: fundo levemente mais profundo (#28292D → #26272B) para as cores de time saltarem; caractere não digitado sobe de #565B67 para #6A6F7C (contraste ~3,4:1 sobre o painel, antes ~2,3:1). #565B67 continua para elementos decorativos. Texto sobre âmbar/ciano/roxo/verde sempre em #1B1C1F.</p>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px">
+    <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">Tipografia</div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+      <div style="display:flex;flex-direction:column;gap:8px"><div style="font:italic 800 48px/1 'Barlow Condensed';text-transform:uppercase">Barlow Condensed</div><div style="font:500 12px 'JetBrains Mono';color:#8B909C">display · 700/800 itálico · caixa alta · títulos, nomes, placar, botões</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px"><div style="font:500 34px/1.2 'JetBrains Mono'">JetBrains Mono</div><div style="font:500 12px 'JetBrains Mono';color:#8B909C">texto da corrida, números, rótulos, links</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px"><div style="font:500 34px/1.2 Inter">Inter</div><div style="font:500 12px 'JetBrains Mono';color:#8B909C">descrições e textos de apoio</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;border-top:1px solid #393C45">
+      <sc-for list="{{ type }}" as="t" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:180px 1fr 200px;gap:16px;padding:12px 0;border-bottom:1px solid #393C45;align-items:baseline;font:500 13px 'JetBrains Mono'"><span style="color:#E8E8E2">{{ t.token }}</span><span style="color:#8B909C">{{ t.spec }}</span><span style="color:#8B909C">{{ t.mobile }}</span></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:48px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">Espaçamento</div>
+      <div style="font:400 14px/1.6 Inter;color:#B5B9C2">Escala base 4px.</div>
+      <sc-for list="{{ space }}" as="s" hint-placeholder-count="8">
+        <div style="display:flex;align-items:center;gap:16px;font:500 12px 'JetBrains Mono';color:#8B909C"><span style="width:70px;color:#E8E8E2">{{ s.name }}</span><span style="height:10px;background:#F2C14E;width:{{ s.px }}px"></span><span>{{ s.px }}px</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">Chanfros e raios</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="width:120px;height:72px;background:#35373E;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)"></div><span style="font:500 12px 'JetBrains Mono';color:#8B909C">--cut-sm 8px</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="width:120px;height:72px;background:#35373E;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)"></div><span style="font:500 12px 'JetBrains Mono';color:#8B909C">--cut-md 12px</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="width:120px;height:72px;background:#35373E;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px)"></div><span style="font:500 12px 'JetBrains Mono';color:#8B909C">--cut-lg 16–20px</span></div>
+      </div>
+      <p style="margin:0;font:400 14px/1.6 Inter;color:#B5B9C2">Chanfro em cantos opostos (sup. esq. + inf. dir.) em cartões; só um canto em botões e blocos do placar. Raio 0 no resto — apenas o logo usa cantos arredondados. Sem sombras projetadas: profundidade vem de camadas de superfície e de faixas de cor (<span style="font-family:'JetBrains Mono'">box-shadow: inset</span> 4–6px na cor do time).</p>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px">
+    <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">Texto da corrida</div>
+    <div style="background:#2C2E33;border:1px solid #393C45;padding:32px 36px;font:400 28px/1.8 'JetBrains Mono';color:#6A6F7C"><span style="color:#E8E8E2">o tempo passa rápido qu</span><span style="color:#E8E8E2;box-shadow:inset 0 -3px 0 #49C5E6">a</span><span style="color:#E8E8E2">ndo você di</span><span style="color:#E5533D;background:rgba(229,83,61,0.16);box-shadow:inset 2px 0 0 #F2C14E">g</span>ita contra alguém do outro lado do mundo</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;font:500 12px/1.6 'JetBrains Mono';color:#8B909C">
+      <div><span style="color:#E8E8E2">digitado</span> · #E8E8E2</div>
+      <div><span style="color:#6A6F7C">não digitado</span> · #6A6F7C</div>
+      <div><span style="color:#E5533D">erro</span> · #E5533D + fundo 16%</div>
+      <div><span style="color:#F2C14E">cursor</span> · barra 2px âmbar à esquerda</div>
+      <div><span style="color:#49C5E6">oponente</span> · sublinhado 3px ciano</div>
+    </div>
+    <p style="margin:0;font:400 14px/1.6 Inter;color:#B5B9C2">Painel sólido, sem textura. 30px/1.8 no desktop, 20px/1.7 no celular. O cursor pisca só quando o jogador está parado (1s steps); durante a digitação fica fixo.</p>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px">
+    <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">Animações</div>
+    <div style="display:flex;flex-direction:column;border-top:1px solid #393C45">
+      <sc-for list="{{ motion }}" as="m" hint-placeholder-count="8">
+        <div style="display:grid;grid-template-columns:200px 1fr 110px 200px;gap:16px;padding:14px 0;border-bottom:1px solid #393C45;align-items:baseline"><span style="font:700 18px 'Barlow Condensed';text-transform:uppercase;letter-spacing:0.04em">{{ m.name }}</span><span style="font:400 14px/1.5 Inter;color:#B5B9C2">{{ m.desc }}</span><span style="font:500 12px 'JetBrains Mono';color:#E8E8E2">{{ m.dur }}</span><span style="font:500 12px 'JetBrains Mono';color:#8B909C">{{ m.ease }}</span></div>
+      </sc-for>
+    </div>
+    <p style="margin:0;font:400 14px/1.6 Inter;color:#B5B9C2">Respeitar <span style="font-family:'JetBrains Mono'">prefers-reduced-motion</span>: trocar deslizes por fade de 120ms.</p>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px">
+    <div style="font:italic 800 32px 'Barlow Condensed';text-transform:uppercase;border-bottom:1px solid #393C45;padding-bottom:12px">CSS de referência</div>
+    <pre style="margin:0;background:#1B1C1F;padding:28px;font:400 13px/1.65 'JetBrains Mono';color:#B5B9C2;overflow:auto;white-space:pre">{{ css }}</pre>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const base = [
+      { name: 'Fundo', hex: '#26272B', use: '--bg' },
+      { name: 'Placar escuro', hex: '#1B1C1F', use: '--ink' },
+      { name: 'Superfície', hex: '#2E3036', use: '--surface' },
+      { name: 'Superfície 2', hex: '#35373E', use: '--surface-2' },
+      { name: 'Painel do texto', hex: '#2C2E33', use: '--race-panel' },
+      { name: 'Borda', hex: '#393C45', use: '--border' },
+      { name: 'Texto', hex: '#E8E8E2', use: '--text' },
+      { name: 'Texto secundário', hex: '#8B909C', use: '--muted' },
+      { name: 'Não digitado', hex: '#6A6F7C', use: '--untyped' },
+      { name: 'Decorativo', hex: '#565B67', use: '--dim' }
+    ];
+    const accents = [
+      { name: 'Você', hex: '#F2C14E', use: '--p1' },
+      { name: 'Oponente', hex: '#49C5E6', use: '--p2' },
+      { name: 'Erro', hex: '#E5533D', use: '--error' },
+      { name: 'Recorde geral', hex: '#B07CF2', use: '--record' },
+      { name: 'Recorde pessoal', hex: '#5BD68A', use: '--pb' }
+    ];
+    const type = [
+      { token: 'display-xl', spec: 'Barlow Cond. 800 itálico 88–104px / 1.0', mobile: 'celular 48–56px' },
+      { token: 'display-l', spec: 'Barlow Cond. 800 itálico 56–72px / 1.0', mobile: 'celular 40–52px' },
+      { token: 'vs-name', spec: 'Barlow Cond. 800 itálico 112px / 0.9', mobile: 'celular 68px' },
+      { token: 'card-title', spec: 'Barlow Cond. 800 itálico 40px / 0.95', mobile: 'celular 30px' },
+      { token: 'button', spec: 'Barlow Cond. 700–800 20px, +0.08em, caixa alta', mobile: 'celular 18px' },
+      { token: 'race-text', spec: 'JetBrains Mono 400 30px / 1.8', mobile: 'celular 20px / 1.7' },
+      { token: 'stat-xl', spec: 'JetBrains Mono 700 88px', mobile: 'celular 56–64px' },
+      { token: 'score', spec: 'JetBrains Mono 700 28px', mobile: 'celular 18px' },
+      { token: 'label', spec: 'JetBrains Mono 500 12px, +0.12em, caixa alta', mobile: 'celular 11px' },
+      { token: 'body', spec: 'Inter 400 15–17px / 1.55', mobile: 'celular 14–15px' }
+    ];
+    const space = [4, 8, 12, 16, 24, 32, 48, 64].map((px, i) => ({ name: '--s-' + (i + 1), px }));
+    const motion = [
+      { name: 'Entrada de tela', desc: 'Conteúdo sobe 12px + fade.', dur: '180ms', ease: 'cubic-bezier(.2,.8,.2,1)' },
+      { name: 'VS', desc: 'Painéis entram pelas laterais (±40px), selo VS escala 1.3 → 1. Escalonado 60ms.', dur: '320ms', ease: 'cubic-bezier(.2,.8,.2,1)' },
+      { name: 'Pronto ✓', desc: 'Selo de estado troca com flash de 1 quadro (brilho) e escala 0.96 → 1.', dur: '140ms', ease: 'ease-out' },
+      { name: 'Contagem', desc: 'Cada número entra em escala 1.4 → 1 e some em fade. “Vai!” em âmbar.', dur: '3 × 1000ms (anim. 250ms)', ease: 'cubic-bezier(.3,1.4,.5,1)' },
+      { name: 'Barra de progresso', desc: 'Transição da largura a cada tecla.', dur: '120ms', ease: 'linear' },
+      { name: 'PPM ao vivo', desc: 'Sem animação de número; atualiza no máximo 4×/s.', dur: '—', ease: '—' },
+      { name: 'Vitória', desc: 'Título desliza da esquerda com recorte diagonal (clip-path) e cartão do vencedor ganha a faixa superior.', dur: '360ms', ease: 'cubic-bezier(.2,.8,.2,1)' },
+      { name: 'Procurando', desc: 'Três quadrados em ciano pulsam em sequência.', dur: '900ms loop', ease: 'ease-in-out' },
+      { name: 'Ranking', desc: 'Linhas da torre entram de cima para baixo, 30ms entre cada.', dur: '200ms', ease: 'cubic-bezier(.2,.8,.2,1)' }
+    ];
+    const css = `@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;1,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg:#26272B; --ink:#1B1C1F; --surface:#2E3036; --surface-2:#35373E;
+  --race-panel:#2C2E33; --border:#393C45; --text:#E8E8E2; --muted:#8B909C;
+  --untyped:#6A6F7C; --dim:#565B67;
+  --p1:#F2C14E; --p2:#49C5E6; --error:#E5533D; --record:#B07CF2; --pb:#5BD68A;
+  --f-display:'Barlow Condensed',sans-serif; --f-mono:'JetBrains Mono',monospace; --f-ui:'Inter',sans-serif;
+  --cut-sm:8px; --cut-md:12px; --cut-lg:16px;
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+}
+
+/* chanfro em dois cantos (cartões) */
+.cut { clip-path: polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut)); }
+/* chanfro só no canto inferior direito (botões) */
+.cut-br { clip-path: polygon(0 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%); }
+
+.display { font: italic 800 var(--size,56px)/1 var(--f-display); text-transform: uppercase; }
+.label   { font: 500 12px var(--f-mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+
+.btn-primary { background: var(--p1); color: var(--ink); font: 800 20px var(--f-display);
+  text-transform: uppercase; letter-spacing: .08em; padding: 16px 36px; --cut: 12px; }
+
+/* texto da corrida */
+.race-text { background: var(--race-panel); border: 1px solid var(--border);
+  font: 400 30px/1.8 var(--f-mono); color: var(--untyped); padding: 44px 48px; }
+.race-text .ok  { color: var(--text); }
+.race-text .err { color: var(--error); background: rgb(229 83 61 / .16); }
+.race-text .cur { box-shadow: inset 2px 0 0 var(--p1); }
+.race-text .opp { box-shadow: inset 0 -3px 0 var(--p2); }
+@media (max-width: 600px) { .race-text { font-size: 20px; line-height: 1.7; padding: 16px; } }
+
+@keyframes screen-in { from { opacity:0; transform:translateY(12px); } }
+@keyframes vs-left   { from { opacity:0; transform:translateX(-40px); } }
+@keyframes vs-right  { from { opacity:0; transform:translateX(40px); } }
+@keyframes vs-badge  { from { opacity:0; transform:scale(1.3); } }
+@keyframes count     { from { opacity:0; transform:scale(1.4); } }
+@keyframes pulse     { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+
+.screen   { animation: screen-in 180ms var(--ease-out); }
+.vs-p1    { animation: vs-left 320ms var(--ease-out); }
+.vs-p2    { animation: vs-right 320ms var(--ease-out) 60ms both; }
+.vs-badge { animation: vs-badge 320ms var(--ease-out) 120ms both; }
+.count    { animation: count 250ms cubic-bezier(.3,1.4,.5,1); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 120ms !important; animation-name: fade !important; }
+}
+@keyframes fade { from { opacity:0; } }`;
+    return { base, accents, type, space, motion, css };
+  }
+}
+</script>
+</body>
+</html>
