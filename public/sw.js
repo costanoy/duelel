@@ -5,12 +5,12 @@
    - Ícones/manifesto: cache primeiro (mudam raramente), atualizando por baixo.
    - WebSocket não passa pelo service worker, então o modo online não é afetado.
    Sempre que mudar a estratégia deste arquivo, incremente o número de CACHE. */
-const CACHE = 'duelel-v2';
+const CACHE = 'duelel-v3';
 const SHELL = [
   '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png'
+  '/icons/icon-192.png?v=2',
+  '/icons/icon-512.png?v=2',
+  '/icons/apple-touch-icon.png?v=2'
 ];
 
 self.addEventListener('install', (e) => {
