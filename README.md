@@ -1,3 +1,13 @@
+<p align="center">
+  <a href="https://duelel.cyberhat.com.br"><img src="docs/screenshots/mobile-home.jpeg" width="260" alt="Duelel home screen"></a>
+  &nbsp;
+  <a href="https://duelel.cyberhat.com.br"><img src="docs/screenshots/mobile-treino-concluido.jpeg" width="260" alt="Duelel practice results"></a>
+</p>
+
+<p align="center">
+  <a href="https://duelel.cyberhat.com.br"><b>Jogar agora / Play now</b></a> · <a href="#duelel-português">Leia em português</a>
+</p>
+
 # Duelel
 
 Real-time typing race. Simple idea: a typing game, but racing directly against another person.
