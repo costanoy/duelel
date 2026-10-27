@@ -18,9 +18,13 @@ This project started back in October 2021, as my first web game. Since then, wit
 
 ## What you can do
 
-- Online duel against another person, either through quick match (automatic matchmaking) or a private room via link
-- Solo practice, in two formats: a fixed text to finish, or 30 seconds racing against the clock
-- Leaderboard with best WPM, split by platform
+- Online duel against another person, either through quick match (automatic matchmaking) or a private room via link or 5-letter code, with rematch at the end
+- A bot opponent when the queue is empty (it always says it's a bot, and its level adapts to yours)
+- Solo practice: 30 seconds, 26 words, or the fixed Duelel Text, with a personal best per mode and a ghost of your record to race against
+- Daily challenge: the same 30-second text for everyone that day
+- Share your result as a challenge link: your friend races your ghost on the same text, no need to be online at the same time
+- Pace chart, most-missed letters and a day streak, all saved on the device
+- Leaderboard with best WPM in tabs (overall / Duelel Text × keyboard / mobile), showing your position even outside the top 25
 - Interface in PT-BR and EN, auto-detected from the browser's language
 - Installable as a PWA (works offline in the solo/timed modes) and packaged for Google Play (still in closed testing before release)
 
@@ -75,9 +79,13 @@ Esse projeto nasceu em outubro de 2021, como o meu primeiro jogo para Web. Desse
 
 ## O que dá pra fazer no jogo
 
-- Duelo online contra outra pessoa, via partida rápida (matchmaking automático) ou sala privada por link
-- Treino sozinho, em dois formatos: um texto fixo pra terminar ou 30 segundos correndo contra o relógio
-- Ranking com melhores PPM, separado por plataforma
+- Duelo online contra outra pessoa, via partida rápida (matchmaking automático) ou sala privada por link ou código de 5 letras, com revanche no fim
+- Bot pra enfrentar quando a fila tá vazia (ele sempre se apresenta como bot, e o nível se ajusta ao seu)
+- Treino sozinho: 30 segundos, 26 palavras ou o Texto Duelel fixo, com recorde pessoal por modo e um fantasma do seu recorde pra correr contra
+- Desafio do dia: o mesmo texto de 30 segundos pra todo mundo naquele dia
+- Compartilhar o resultado como link de desafio: o amigo corre contra o seu fantasma no mesmo texto, sem precisar estar online junto
+- Gráfico de ritmo, letras que você mais erra e sequência de dias, tudo salvo no aparelho
+- Ranking com melhores PPM em abas (geral / Texto Duelel × teclado / celular), mostrando a sua posição mesmo fora do top 25
 - Interface em PT-BR e EN, com detecção automática pelo idioma do navegador
 - Instalável como PWA (funciona offline nos modos solo/tempo) e empacotado pra Google Play (ainda em fase de testes antes de ser lançado)
 
